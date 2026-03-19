@@ -4,6 +4,7 @@ package generator
 
 import (
 	_ "embed"
+	"bytes"
 	"fmt"
 	"html/template"
 	"os"
@@ -20,6 +21,7 @@ var quizTemplate string
 // Options controls generation behaviour.
 type Options struct {
 	OutputPath string // explicit output path; if empty, derived from source path
+	ServerMode bool   // when true, the HTML POSTs answers back to the local sfq server
 }
 
 // Generate produces an HTML file from a parsed QuizFile.
@@ -32,28 +34,13 @@ func Generate(qf *parser.QuizFile, sourcePath string, opts Options) (string, err
 		outPath = filepath.Join(dir, base+".html")
 	}
 
-	// Convert all markdown fields to HTML
-	data, err := buildTemplateData(qf)
+	htmlBytes, err := GenerateBytes(qf, opts)
 	if err != nil {
-		return "", fmt.Errorf("building template data: %w", err)
+		return "", err
 	}
 
-	tmpl, err := template.New("quiz").Funcs(template.FuncMap{
-		"html": func(s string) template.HTML { return template.HTML(s) },
-		"add":  func(a, b int) int { return a + b },
-	}).Parse(quizTemplate)
-	if err != nil {
-		return "", fmt.Errorf("parsing template: %w", err)
-	}
-
-	f, err := os.Create(outPath)
-	if err != nil {
+	if err := os.WriteFile(outPath, htmlBytes, 0o644); err != nil {
 		return "", fmt.Errorf("creating output file: %w", err)
-	}
-	defer f.Close()
-
-	if err := tmpl.Execute(f, data); err != nil {
-		return "", fmt.Errorf("executing template: %w", err)
 	}
 
 	absPath, err := filepath.Abs(outPath)
@@ -63,6 +50,29 @@ func Generate(qf *parser.QuizFile, sourcePath string, opts Options) (string, err
 	return absPath, nil
 }
 
+// GenerateBytes renders the quiz HTML into memory and returns the raw bytes.
+// Used by the HTTP server to serve HTML without writing to disk.
+func GenerateBytes(qf *parser.QuizFile, opts Options) ([]byte, error) {
+	data, err := buildTemplateData(qf, opts.ServerMode)
+	if err != nil {
+		return nil, fmt.Errorf("building template data: %w", err)
+	}
+
+	tmpl, err := template.New("quiz").Funcs(template.FuncMap{
+		"html": func(s string) template.HTML { return template.HTML(s) },
+		"add":  func(a, b int) int { return a + b },
+	}).Parse(quizTemplate)
+	if err != nil {
+		return nil, fmt.Errorf("parsing template: %w", err)
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return nil, fmt.Errorf("executing template: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
 // TemplateData is the data model passed to the HTML template.
 type TemplateData struct {
 	Title       string
@@ -70,6 +80,7 @@ type TemplateData struct {
 	Description string
 	Questions   []QuestionData
 	TotalCount  int
+	ServerMode  bool // true when served by local sfq HTTP server
 }
 
 // QuestionData is the per-question data model for the template.
@@ -97,7 +108,7 @@ type ChoiceData struct {
 	Order     int
 }
 
-func buildTemplateData(qf *parser.QuizFile) (*TemplateData, error) {
+func buildTemplateData(qf *parser.QuizFile, serverMode bool) (*TemplateData, error) {
 	md := goldmark.New()
 
 	renderMD := func(src string) (template.HTML, error) {
@@ -121,6 +132,7 @@ func buildTemplateData(qf *parser.QuizFile) (*TemplateData, error) {
 		Author:      qf.Author,
 		Description: qf.Description,
 		TotalCount:  len(qf.Questions),
+		ServerMode:  serverMode,
 	}
 
 	typeLabels := map[parser.QuestionType]string{

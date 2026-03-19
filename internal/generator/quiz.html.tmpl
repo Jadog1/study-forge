@@ -607,6 +607,17 @@
           <span class="nav-num">🏁</span>
           <span class="nav-text">Summary</span>
         </div>
+        {{ if .ServerMode }}
+        <div id="sidebar-finish-wrap" style="padding: 0.5rem 0.4rem 0;">
+          <button id="sidebar-finish-btn" onclick="sidebarFinish()"
+            style="width:100%; display:flex; align-items:center; gap:0.55rem; padding:0.5rem 0.6rem;
+                   border-radius:var(--radius-sm); border:1px solid var(--accent);
+                   background:var(--accent-glow); color:var(--accent); font-family:inherit;
+                   font-size:0.8rem; font-weight:600; cursor:pointer; transition:background var(--transition);">
+            ✓ Finish Session
+          </button>
+        </div>
+        {{ end }}
       </div>
     </nav>
 
@@ -758,6 +769,7 @@
           <div class="stat"><div class="stat-val sk" id="sum-skip">{{ .TotalCount }}</div><div class="stat-lbl">Remaining</div></div>
         </div>
         <button class="btn-restart" onclick="goTo(0)">← Back to first question</button>
+        <button class="btn-restart" id="btn-finish-session" style="display:none; background:var(--accent); color:#fff; border-color:var(--accent); margin-left:0.5rem;">✓ Finish Session</button>
       </div>
 
     </div><!-- /stage -->
@@ -770,9 +782,19 @@
   const TOTAL = {{ .TotalCount }};
   const ids   = [{{ range .Questions }}'{{ .ID }}',{{ end }}];
 
+  // ── Server Mode ───────────────────────────────────────────────────
+  const SERVER_MODE = {{ if .ServerMode }}true{{ else }}false{{ end }};
+
+  // Per-question metadata for server-mode POSTs
+  const Q_META = {
+    {{ range .Questions }}'{{ .ID }}': { title: {{ printf "%q" .Title }}, tags: [{{ range .Tags }}{{ printf "%q" . }},{{ end }}], type: '{{ .Type }}' },
+    {{ end }}
+  };
+
   // ── State ─────────────────────────────────────────────────────────
   let current = 0;  // 0-based index into ids, TOTAL = summary
   const st = {};
+  const qStartTimes = {}; // question open time for time_spent_s calculation
   ids.forEach(id => { st[id] = { answered: false, correct: false }; });
 
   // ── Navigation ────────────────────────────────────────────────────
@@ -802,6 +824,11 @@
     updateSidebarActive();
     updateTopbar();
     updateSummary();
+
+    // Track when a question page is opened (for time_spent_s)
+    if (SERVER_MODE && idx < TOTAL) {
+      qStartTimes[ids[idx]] = Date.now();
+    }
 
     // Scroll active sidebar item into view
     if (idx < TOTAL) {
@@ -1084,6 +1111,24 @@
     updateSidebarItem(qid);
     updateTopbar();
     updateSummary();
+
+    // ── POST answer to server (server mode only) ─────────────────────
+    if (SERVER_MODE) {
+      const elapsed = qStartTimes[qid] ? Math.round((Date.now() - qStartTimes[qid]) / 1000) : 0;
+      const meta = Q_META[qid] || {};
+      fetch('/answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question_id:    qid,
+          question_title: meta.title || qid,
+          tags:           meta.tags  || [],
+          type:           meta.type  || '',
+          correct:        isCorrect,
+          time_spent_s:   elapsed,
+        }),
+      }).catch(() => {}); // non-fatal
+    }
   };
 
   // ── Keyboard navigation ────────────────────────────────────────────
@@ -1099,6 +1144,30 @@
 
   // ── Init ──────────────────────────────────────────────────────────
   goTo(0);
+
+  // ── Server-mode plumbing ──────────────────────────────────────────
+  if (SERVER_MODE) {
+    // Heartbeat every 5 s so the server knows the window is still open
+    setInterval(() => { fetch('/heartbeat', { method: 'POST' }).catch(() => {}); }, 5000);
+
+    // Wire up the Finish Session button (revealed in server mode)
+    const finishBtn = document.getElementById('btn-finish-session');
+    if (finishBtn) {
+      finishBtn.style.display = 'inline-flex';
+      finishBtn.addEventListener('click', () => {
+        let correct = 0, incorrect = 0;
+        ids.forEach(id => {
+          if (st[id].answered) { st[id].correct ? correct++ : incorrect++; }
+        });
+        const skipped = TOTAL - correct - incorrect;
+        fetch('/finish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ correct, incorrect, skipped }),
+        }).catch(() => {}).finally(() => window.close());
+      });
+    }
+  }
 })();
 </script>
 </body>

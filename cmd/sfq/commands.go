@@ -5,15 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
+	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/Jadog1/study-forge/internal/generator"
 	"github.com/Jadog1/study-forge/internal/parser"
 	"github.com/Jadog1/study-forge/internal/schema"
+	"github.com/Jadog1/study-forge/internal/server"
+	"github.com/Jadog1/study-forge/internal/session"
 	"github.com/Jadog1/study-forge/internal/state"
+	"github.com/Jadog1/study-forge/internal/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -32,14 +35,44 @@ description of all commands and the .sfq syntax.`,
 	}
 
 	root.AddCommand(
+		startCmd(),
 		generateCmd(),
 		openCmd(),
 		exportCmd(),
 		validateCmd(),
 		infoCmd(),
+		historyCmd(),
+		resultsCmd(),
+		retakeCmd(),
 		schemaCmd(),
 	)
 	return root
+}
+
+// ── start ─────────────────────────────────────────────────────────────────────
+
+func startCmd() *cobra.Command {
+	var noOpen bool
+
+	cmd := &cobra.Command{
+		Use:   "start <file.sfq>",
+		Short: "Start an interactive quiz session (local HTTP server, records answers)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			absPath, err := filepath.Abs(args[0])
+			if err != nil {
+				return fmt.Errorf("resolving path: %w", err)
+			}
+			qf, err := parser.ParseFile(absPath)
+			if err != nil {
+				return fmt.Errorf("parse error: %w", err)
+			}
+			fmt.Printf("Starting quiz: %s (%d questions)\n", qf.Title, len(qf.Questions))
+			return server.Run(qf, absPath, !noOpen)
+		},
+	}
+	cmd.Flags().BoolVar(&noOpen, "no-open", false, "Do not open the browser automatically")
+	return cmd
 }
 
 // ── generate ─────────────────────────────────────────────────────────────────
@@ -80,7 +113,7 @@ func openCmd() *cobra.Command {
 				return fmt.Errorf("last generated file no longer exists: %s", s.LastOutput)
 			}
 			fmt.Printf("Opening: %s\n", s.LastOutput)
-			return openBrowser(s.LastOutput)
+			return server.OpenFile(s.LastOutput)
 		},
 	}
 }
@@ -147,6 +180,237 @@ func infoCmd() *cobra.Command {
 	}
 }
 
+// ── history ───────────────────────────────────────────────────────────────────
+
+func historyCmd() *cobra.Command {
+	var (
+		tags   []string
+		since  string
+		until  string
+		limit  int
+		offset int
+		asJSON bool
+		plain  bool
+	)
+
+	cmd := &cobra.Command{
+		Use:   "history",
+		Short: "Browse past quiz sessions interactively (or use --plain/--json for pipelines)",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			opts := session.ListSessionsFilter{
+				Tags:   tags,
+				Limit:  limit,
+				Offset: offset,
+			}
+			if since != "" {
+				t, err := time.Parse("2006-01-02", since)
+				if err != nil {
+					return fmt.Errorf("invalid --since date (use YYYY-MM-DD): %w", err)
+				}
+				opts.Since = t
+			}
+			if until != "" {
+				t, err := time.Parse("2006-01-02", until)
+				if err != nil {
+					return fmt.Errorf("invalid --until date (use YYYY-MM-DD): %w", err)
+				}
+				opts.Until = t.Add(24*time.Hour - time.Second)
+			}
+
+			sessions, err := session.ListSessions(opts)
+			if err != nil {
+				return fmt.Errorf("listing sessions: %w", err)
+			}
+
+			// ── JSON mode (agent-friendly) ──
+			if asJSON {
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				return enc.Encode(sessions)
+			}
+
+			if len(sessions) == 0 {
+				fmt.Println("No sessions found.")
+				return nil
+			}
+
+			// ── Plain mode (pipe/CI-friendly) ──
+			if plain {
+				w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+				fmt.Fprintln(w, "SESSION ID\tQUIZ TITLE\tSTARTED\tSCORE\tTAGS")
+				fmt.Fprintln(w, "──────────\t──────────\t───────\t─────\t────")
+				for _, s := range sessions {
+					scoreStr := "in progress"
+					if s.Score != nil {
+						scoreStr = fmt.Sprintf("%d%%  (%d/%d)", s.Score.Pct, s.Score.Correct, s.TotalQuestions)
+					}
+					tagsStr := strings.Join(s.Tags, ", ")
+					if tagsStr == "" {
+						tagsStr = "—"
+					}
+					fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+						s.SessionID,
+						s.QuizTitle,
+						s.StartedAt.Local().Format("2006-01-02 15:04"),
+						scoreStr,
+						tagsStr,
+					)
+				}
+				return w.Flush()
+			}
+
+			// ── TUI mode (default) ──
+			retakeID, err := tui.RunHistory(sessions)
+			if err != nil {
+				return err
+			}
+			if retakeID == "" {
+				return nil
+			}
+			// User pressed `r` — launch a fresh session on the same quiz.
+			dir, err := session.SessionDirByID(retakeID)
+			if err != nil {
+				return fmt.Errorf("resolving session: %w", err)
+			}
+			meta, err := session.LoadMeta(dir)
+			if err != nil {
+				return fmt.Errorf("loading session: %w", err)
+			}
+			if _, statErr := os.Stat(meta.QuizFile); os.IsNotExist(statErr) {
+				return fmt.Errorf("original quiz file no longer exists: %s", meta.QuizFile)
+			}
+			qf, err := parser.ParseFile(meta.QuizFile)
+			if err != nil {
+				return fmt.Errorf("parse error: %w", err)
+			}
+			fmt.Printf("Retaking: %s (%d questions)\n", qf.Title, len(qf.Questions))
+			return server.Run(qf, meta.QuizFile, true)
+		},
+	}
+	cmd.Flags().StringArrayVarP(&tags, "tag", "t", nil, "Filter by tag (repeatable: -t go -t concurrency)")
+	cmd.Flags().StringVar(&since, "since", "", "Only show sessions on or after this date (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&until, "until", "", "Only show sessions on or before this date (YYYY-MM-DD)")
+	cmd.Flags().IntVarP(&limit, "limit", "n", 0, "Maximum number of sessions to show (0 = all)")
+	cmd.Flags().IntVar(&offset, "offset", 0, "Skip this many sessions (for pagination)")
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output as JSON (for agent use)")
+	cmd.Flags().BoolVar(&plain, "plain", false, "Plain text table output (no TUI, for pipes/CI)")
+	return cmd
+}
+
+// ── results ───────────────────────────────────────────────────────────────────
+
+func resultsCmd() *cobra.Command {
+	var asJSON bool
+
+	cmd := &cobra.Command{
+		Use:   "results <session-id>",
+		Short: "Show detailed results for a past quiz session",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			sid := args[0]
+			dir, err := session.SessionDirByID(sid)
+			if err != nil {
+				return fmt.Errorf("resolving session: %w", err)
+			}
+
+			meta, err := session.LoadMeta(dir)
+			if err != nil {
+				return fmt.Errorf("loading session %q: %w", sid, err)
+			}
+			answers, err := session.LoadAnswers(dir)
+			if err != nil {
+				return fmt.Errorf("loading answers for %q: %w", sid, err)
+			}
+
+			if asJSON {
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				return enc.Encode(map[string]any{
+					"session": meta,
+					"answers": answers,
+				})
+			}
+
+			// Human-readable output
+			fmt.Printf("\n📚 %s\n", meta.QuizTitle)
+			fmt.Printf("   Session  : %s\n", meta.SessionID)
+			fmt.Printf("   Started  : %s\n", meta.StartedAt.Local().Format("2006-01-02 15:04:05"))
+			if meta.EndedAt != nil {
+				fmt.Printf("   Ended    : %s\n", meta.EndedAt.Local().Format("2006-01-02 15:04:05"))
+			}
+			if meta.Score != nil {
+				fmt.Printf("   Score    : %d%% — %d correct, %d incorrect, %d skipped\n",
+					meta.Score.Pct, meta.Score.Correct, meta.Score.Incorrect, meta.Score.Skipped)
+			}
+			if len(meta.Tags) > 0 {
+				fmt.Printf("   Tags     : %s\n", strings.Join(meta.Tags, ", "))
+			}
+
+			if len(answers) == 0 {
+				fmt.Println("\n   No answers recorded yet.")
+				return nil
+			}
+
+			fmt.Println()
+			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+			fmt.Fprintln(w, "  #\tRESULT\tQ-ID\tTITLE\tTYPE\tTIME\tTAGS")
+			fmt.Fprintln(w, "  ─\t──────\t────\t─────\t────\t────\t────")
+			for i, a := range answers {
+				result := "✅"
+				if !a.Correct {
+					result = "❌"
+				}
+				tagsStr := strings.Join(a.Tags, ", ")
+				if tagsStr == "" {
+					tagsStr = "—"
+				}
+				fmt.Fprintf(w, "  %d\t%s\t%s\t%s\t%s\t%ds\t%s\n",
+					i+1, result, a.QuestionID, truncate(a.QuestionTitle, 30), a.Type, a.TimeSpentSecs, tagsStr)
+			}
+			w.Flush()
+			fmt.Println()
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output as JSON (for agent use)")
+	return cmd
+}
+
+// ── retake ────────────────────────────────────────────────────────────────────
+
+func retakeCmd() *cobra.Command {
+	var noOpen bool
+
+	cmd := &cobra.Command{
+		Use:   "retake <session-id>",
+		Short: "Re-run the quiz from a previous session (starts a fresh session)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			sid := args[0]
+			dir, err := session.SessionDirByID(sid)
+			if err != nil {
+				return fmt.Errorf("resolving session: %w", err)
+			}
+			meta, err := session.LoadMeta(dir)
+			if err != nil {
+				return fmt.Errorf("loading session %q: %w", sid, err)
+			}
+			if _, err := os.Stat(meta.QuizFile); os.IsNotExist(err) {
+				return fmt.Errorf("original quiz file no longer exists: %s\nRun 'sfq start <path>' with the new location instead.", meta.QuizFile)
+			}
+			qf, err := parser.ParseFile(meta.QuizFile)
+			if err != nil {
+				return fmt.Errorf("parse error: %w", err)
+			}
+			fmt.Printf("Retaking: %s (%d questions)\n", qf.Title, len(qf.Questions))
+			return server.Run(qf, meta.QuizFile, !noOpen)
+		},
+	}
+	cmd.Flags().BoolVar(&noOpen, "no-open", false, "Do not open the browser automatically")
+	return cmd
+}
+
 // ── schema ────────────────────────────────────────────────────────────────────
 
 func schemaCmd() *cobra.Command {
@@ -191,26 +455,16 @@ func runGenerate(sourcePath, outputPath string, openAfter bool) error {
 
 	if openAfter {
 		fmt.Println("Opening in browser...")
-		return openBrowser(htmlPath)
+		return server.OpenFile(htmlPath)
 	}
 	return nil
 }
 
-// openBrowser opens the given file:// path in the OS default browser.
-func openBrowser(htmlPath string) error {
-	url := "file://" + filepath.ToSlash(htmlPath)
-
-	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "windows":
-		cmd = exec.Command("cmd", "/c", "start", "", url)
-	case "darwin":
-		cmd = exec.Command("open", url)
-	default: // linux
-		cmd = exec.Command("xdg-open", url)
+// truncate shortens s to at most n runes, appending "…" if trimmed.
+func truncate(s string, n int) string {
+	runes := []rune(s)
+	if len(runes) <= n {
+		return s
 	}
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("opening browser: %w", err)
-	}
-	return nil
+	return string(runes[:n-1]) + "…"
 }

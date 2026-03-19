@@ -18,6 +18,9 @@ type QuizFile struct {
 	Questions   []Question
 }
 
+// TotalCount returns the number of questions in the quiz file.
+func (qf *QuizFile) TotalCount() int { return len(qf.Questions) }
+
 // Question represents a single parsed question block.
 type Question struct {
 	ID          string
