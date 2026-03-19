@@ -16,365 +16,320 @@
       --surface-3:   #252944;
       --border:      #2e3354;
       --accent:      #7c6af0;
-      --accent-glow: rgba(124,106,240,0.25);
+      --accent-glow: rgba(124,106,240,0.22);
       --accent-2:    #5de4c7;
       --correct:     #22d97a;
-      --correct-bg:  rgba(34,217,122,0.12);
+      --correct-bg:  rgba(34,217,122,0.1);
       --wrong:       #f05d7c;
-      --wrong-bg:    rgba(240,93,124,0.12);
+      --wrong-bg:    rgba(240,93,124,0.1);
       --text:        #e8eaf6;
       --text-muted:  #8991b4;
       --text-dim:    #5a6080;
-      --radius:      14px;
+      --radius:      12px;
       --radius-sm:   8px;
-      --sidebar-w:   280px;
-      --header-h:    60px;
-      --transition:  0.2s ease;
+      --sidebar-w:   260px;
+      --topbar-h:    52px;
+      --pb-h:        3px;
+      --transition:  0.18s ease;
+      --content-max: 720px;
     }
 
-     
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
+
     body {
       font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.65;
-      min-height: 100vh;
+      line-height: 1.6;
+      height: 100vh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
     }
-    a { color: var(--accent); text-decoration: none; }
-    p { margin-bottom: 0.75rem; }
-    code {
-      font-size: 0.875em;
-      background: var(--surface-3);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 0.1em 0.4em;
-    }
-    pre {
-      background: var(--surface-3);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 1rem;
-      overflow-x: auto;
-      margin-bottom: 0.75rem;
-    }
-    pre code { background: none; border: none; padding: 0; }
 
      
     .topbar {
-      height: var(--header-h);
+      height: var(--topbar-h);
+      flex-shrink: 0;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr auto;
+      align-items: center;
+      padding: 0 1rem;
+      z-index: 100;
+    }
+    .topbar-brand {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0 1.5rem;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      backdrop-filter: blur(12px);
-    }
-    .topbar-title {
-      font-size: 1.05rem;
+      gap: 0.45rem;
+      font-size: 0.9rem;
       font-weight: 600;
       color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .topbar-brand .icon { color: var(--accent); font-size: 1.1rem; flex-shrink: 0; }
+    .topbar-brand-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .topbar-center {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
+      gap: 1rem;
     }
-    .topbar-title .icon { color: var(--accent); font-size: 1.2rem; }
-    .topbar-meta { font-size: 0.8rem; color: var(--text-muted); }
+    .q-counter {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .q-counter span { color: var(--accent-2); }
+    .topbar-end {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.25rem 0.7rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .score-pill .val { color: var(--accent-2); }
 
      
-    .progress-bar-wrap {
-      position: fixed;
-      top: var(--header-h);
-      left: 0;
-      width: 100%;
-      height: 3px;
+    .progress-wrap {
+      height: var(--pb-h);
+      flex-shrink: 0;
       background: var(--surface-3);
-      z-index: 99;
     }
-    .progress-bar-fill {
+    .progress-fill {
       height: 100%;
       background: linear-gradient(90deg, var(--accent), var(--accent-2));
       width: 0%;
-      transition: width 0.4s ease;
+      transition: width 0.45s ease;
       border-radius: 0 2px 2px 0;
     }
 
      
-    .layout {
+    .body-layout {
       display: flex;
       flex: 1;
-      overflow: hidden;
+      min-height: 0;  
     }
 
      
     .sidebar {
       width: var(--sidebar-w);
-      min-width: var(--sidebar-w);
+      flex-shrink: 0;
       background: var(--surface);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      position: sticky;
-      top: calc(var(--header-h) + 3px);
-      height: calc(100vh - var(--header-h) - 3px);
+      overflow: hidden;
+    }
+    .sidebar-header {
+      padding: 0.75rem 0.85rem 0.6rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .sidebar-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+    }
+    .sidebar-scroll {
+      flex: 1;
       overflow-y: auto;
+      padding: 0.4rem;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
     }
-    .sidebar-header {
-      padding: 1rem 1rem 0.75rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .sidebar-label {
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-dim);
-      margin-bottom: 0.5rem;
-    }
-    .score-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: var(--surface-3);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 0.3rem 0.75rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-    .score-badge span { color: var(--accent-2); font-size: 1rem; }
+    .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+    .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-    .sidebar-nav { padding: 0.5rem; }
-    .sidebar-item {
+    .nav-item {
       display: flex;
-      align-items: flex-start;
-      gap: 0.6rem;
-      padding: 0.6rem 0.75rem;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.5rem 0.6rem;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: background var(--transition);
-      text-decoration: none;
+      transition: background var(--transition), color var(--transition);
       color: var(--text-muted);
-      font-size: 0.83rem;
+      font-size: 0.8rem;
+      border: 1px solid transparent;
+      margin-bottom: 2px;
+      user-select: none;
     }
-    .sidebar-item:hover,
-    .sidebar-item.active { background: var(--surface-3); color: var(--text); }
-    .sidebar-item.answered-correct { color: var(--correct); }
-    .sidebar-item.answered-wrong   { color: var(--wrong); }
-    .sidebar-num {
+    .nav-item:hover { background: var(--surface-2); color: var(--text); }
+    .nav-item.active {
+      background: var(--surface-3);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .nav-item.correct { color: var(--correct); }
+    .nav-item.wrong   { color: var(--wrong); }
+    .nav-num {
       flex-shrink: 0;
-      width: 22px;
-      height: 22px;
+      width: 20px; height: 20px;
       border-radius: 50%;
       border: 1.5px solid currentColor;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem;
       font-weight: 700;
     }
-    .sidebar-text { flex: 1; line-height: 1.3; }
-    .sidebar-type-pill {
-      flex-shrink: 0;
-      font-size: 0.62rem;
-      padding: 0.1rem 0.45rem;
-      border-radius: 20px;
+    .nav-text { flex: 1; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nav-badge {
+      font-size: 0.58rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 10px;
       background: var(--surface-2);
-      color: var(--text-dim);
       border: 1px solid var(--border);
+      color: var(--text-dim);
+      flex-shrink: 0;
       white-space: nowrap;
     }
+    .nav-item.correct .nav-badge { background: var(--correct-bg); border-color: var(--correct); color: var(--correct); }
+    .nav-item.wrong   .nav-badge { background: var(--wrong-bg);   border-color: var(--wrong);   color: var(--wrong);   }
 
      
-    .main {
+    .stage {
       flex: 1;
-      padding: 2.5rem 2rem;
-      max-width: 860px;
-      margin: 0 auto;
-      width: 100%;
-      padding-bottom: 6rem;
-    }
-
-     
-    .quiz-header {
-      margin-bottom: 2.5rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .quiz-title {
-      font-size: 2rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 0.4rem;
-    }
-    .quiz-author { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; }
-    .quiz-desc   { color: var(--text-muted); font-size: 0.9rem; }
-    .quiz-stats  {
+      min-width: 0;
       display: flex;
-      gap: 1rem;
-      margin-top: 1rem;
-      flex-wrap: wrap;
-    }
-    .stat-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 0.3rem 0.8rem;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-    .stat-chip .dot {
-      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
-    }
-
-     
-    .question-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.75rem;
-      margin-bottom: 1.5rem;
-      scroll-margin-top: calc(var(--header-h) + 3px + 1rem);
-      transition: border-color var(--transition), box-shadow var(--transition);
-      position: relative;
+      flex-direction: column;
       overflow: hidden;
     }
-    .question-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0;
-      width: 3px; height: 100%;
-      background: var(--accent);
-      opacity: 0;
-      transition: opacity var(--transition);
-    }
-    .question-card.active::before { opacity: 1; }
-    .question-card.answered-correct {
-      border-color: var(--correct);
-      box-shadow: 0 0 0 1px var(--correct), 0 0 20px rgba(34,217,122,0.08);
-    }
-    .question-card.answered-correct::before { background: var(--correct); opacity: 1; }
-    .question-card.answered-wrong {
-      border-color: var(--wrong);
-      box-shadow: 0 0 0 1px var(--wrong), 0 0 20px rgba(240,93,124,0.08);
-    }
-    .question-card.answered-wrong::before { background: var(--wrong); opacity: 1; }
 
-    .q-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 1.25rem;
+     
+    .q-page {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      padding: 1.5rem 2rem 1rem;
+      overflow: hidden;
     }
-    .q-number-badge {
+    .q-page.active { display: flex; }
+
+     
+    .q-meta {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-    }
-    .q-num {
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #fff;
-      font-size: 0.8rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      gap: 0.6rem;
+      margin-bottom: 0.85rem;
       flex-shrink: 0;
     }
     .q-type-pill {
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 0.2rem 0.6rem;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
       border-radius: 20px;
       background: var(--accent-glow);
       border: 1px solid var(--accent);
       color: var(--accent);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
     }
-    .q-title { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.2rem; }
-
-    .q-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+    .q-title-text {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .btn-hint {
-      font-size: 0.75rem;
-      padding: 0.3rem 0.75rem;
+    .btn-hint-inline {
+      margin-left: auto;
+      font-size: 0.72rem;
+      padding: 0.22rem 0.65rem;
       border-radius: 20px;
       border: 1px solid var(--border);
       background: transparent;
       color: var(--text-muted);
       cursor: pointer;
       transition: border-color var(--transition), color var(--transition);
+      flex-shrink: 0;
     }
-    .btn-hint:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-hint-inline:hover { border-color: var(--accent); color: var(--accent); }
 
-    .q-prompt {
-      font-size: 1rem;
-      color: var(--text);
-      line-height: 1.7;
-      margin-bottom: 1.5rem;
-    }
-    .q-prompt p:last-child { margin-bottom: 0; }
-
-     
-    .hint-box {
-      background: rgba(124,106,240,0.08);
-      border: 1px dashed var(--accent);
-      border-radius: var(--radius-sm);
-      padding: 0.75rem 1rem;
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      margin-bottom: 1.25rem;
-      display: none;
-    }
-    .hint-box.visible { display: block; }
-    .hint-label { color: var(--accent); font-weight: 600; margin-bottom: 0.25rem; font-size: 0.8rem; }
-
-     
-    .tag-list { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .tag-row { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.65rem; flex-shrink: 0; }
     .tag {
-      font-size: 0.68rem;
-      padding: 0.15rem 0.55rem;
-      border-radius: 20px;
+      font-size: 0.63rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 10px;
       background: var(--surface-3);
       color: var(--text-dim);
       border: 1px solid var(--border);
     }
 
      
-    .choice-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      margin-bottom: 1.25rem;
+    .hint-box {
+      background: rgba(124,106,240,0.07);
+      border: 1px dashed var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 0.55rem 0.85rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 0.65rem;
+      display: none;
+      flex-shrink: 0;
     }
+    .hint-box.visible { display: block; }
+    .hint-label { font-size: 0.7rem; font-weight: 700; color: var(--accent); margin-bottom: 0.2rem; }
+
+     
+    .q-prompt {
+      font-size: 1.05rem;
+      font-weight: 500;
+      line-height: 1.65;
+      color: var(--text);
+      margin-bottom: 1rem;
+      flex-shrink: 0;
+    }
+    .q-prompt p { margin-bottom: 0.4rem; }
+    .q-prompt p:last-child { margin-bottom: 0; }
+    .q-prompt code {
+      font-size: 0.875em;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1em 0.4em;
+    }
+
+     
+    .answers-area {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+      padding-right: 4px;
+      margin-bottom: 0.75rem;
+    }
+    .answers-area::-webkit-scrollbar { width: 4px; }
+    .answers-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+     
+    .choice-list { display: flex; flex-direction: column; gap: 0.5rem; }
     .choice-item {
       display: flex;
       align-items: center;
-      gap: 0.85rem;
-      padding: 0.85rem 1.1rem;
+      gap: 0.75rem;
+      padding: 0.7rem 0.95rem;
       border-radius: var(--radius-sm);
       border: 1.5px solid var(--border);
       background: var(--surface-2);
@@ -383,65 +338,50 @@
       user-select: none;
     }
     .choice-item:hover { border-color: var(--accent); background: var(--surface-3); transform: translateX(2px); }
-    .choice-item.selected {
-      border-color: var(--accent);
-      background: rgba(124,106,240,0.12);
-    }
-    .choice-item.correct-reveal {
-      border-color: var(--correct) !important;
-      background: var(--correct-bg) !important;
-    }
-    .choice-item.wrong-reveal {
-      border-color: var(--wrong) !important;
-      background: var(--wrong-bg) !important;
-    }
+    .choice-item.selected { border-color: var(--accent); background: rgba(124,106,240,0.1); }
+    .choice-item.correct-reveal { border-color: var(--correct) !important; background: var(--correct-bg) !important; }
+    .choice-item.wrong-reveal   { border-color: var(--wrong)   !important; background: var(--wrong-bg)   !important; }
     .choice-item.disabled { cursor: default; pointer-events: none; }
     .choice-marker {
-      width: 20px; height: 20px;
-      border-radius: 50%;  
+      width: 18px; height: 18px;
+      border-radius: 50%;
       border: 2px solid var(--border);
-      background: transparent;
       flex-shrink: 0;
-      transition: border-color var(--transition), background var(--transition);
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.65rem;
+      transition: border-color var(--transition), background var(--transition);
+      font-size: 0.6rem;
     }
-    .choice-marker.checkbox { border-radius: 5px; }
-    .choice-item.selected .choice-marker { border-color: var(--accent); background: var(--accent); }
+    .choice-marker.checkbox { border-radius: 4px; }
+    .choice-item.selected .choice-marker      { border-color: var(--accent);  background: var(--accent);  }
     .choice-item.correct-reveal .choice-marker { border-color: var(--correct); background: var(--correct); }
     .choice-item.wrong-reveal   .choice-marker { border-color: var(--wrong);   background: var(--wrong);   }
-    .choice-check { color: #fff; font-size: 0.75rem; display: none; }
+    .choice-check { color: #fff; font-size: 0.65rem; display: none; }
     .choice-item.selected .choice-check,
     .choice-item.correct-reveal .choice-check,
     .choice-item.wrong-reveal   .choice-check { display: block; }
-    .choice-label { flex: 1; font-size: 0.9rem; color: var(--text); }
+    .choice-label { flex: 1; font-size: 0.875rem; line-height: 1.4; }
 
      
-    .mtf-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1.25rem;
-    }
+    .mtf-list { display: flex; flex-direction: column; gap: 0.45rem; }
     .mtf-row {
       display: flex;
       align-items: center;
-      gap: 1rem;
-      padding: 0.7rem 1rem;
+      gap: 0.85rem;
+      padding: 0.6rem 0.9rem;
       border-radius: var(--radius-sm);
       border: 1.5px solid var(--border);
       background: var(--surface-2);
     }
-    .mtf-label { flex: 1; font-size: 0.9rem; }
-    .mtf-toggle-group { display: flex; gap: 0.4rem; }
+    .mtf-label { flex: 1; font-size: 0.875rem; line-height: 1.35; }
+    .mtf-toggle-group { display: flex; gap: 0.35rem; flex-shrink: 0; }
     .mtf-btn {
-      padding: 0.3rem 0.9rem;
+      padding: 0.25rem 0.75rem;
       border-radius: 20px;
       border: 1.5px solid var(--border);
       background: transparent;
       color: var(--text-muted);
-      font-size: 0.8rem;
-      font-weight: 600;
+      font-size: 0.76rem;
+      font-weight: 700;
       cursor: pointer;
       transition: border-color var(--transition), color var(--transition), background var(--transition);
     }
@@ -453,290 +393,276 @@
     .mtf-row.disabled .mtf-btn { cursor: default; pointer-events: none; }
 
      
-    .short-answer-wrap { margin-bottom: 1.25rem; }
     .short-answer-input {
       width: 100%;
       background: var(--surface-2);
       border: 1.5px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 0.7rem 1rem;
+      padding: 0.65rem 0.9rem;
       font-family: inherit;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       color: var(--text);
-      transition: border-color var(--transition);
       outline: none;
       resize: vertical;
-      min-height: 80px;
+      min-height: 72px;
+      transition: border-color var(--transition);
     }
-    .short-answer-input:focus { border-color: var(--accent); }
-    .short-answer-input:disabled { opacity: 0.7; cursor: default; }
+    .short-answer-input:focus  { border-color: var(--accent); }
+    .short-answer-input:disabled { opacity: 0.65; cursor: default; }
 
      
-    .ordering-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1.25rem;
-    }
+    .ordering-list { display: flex; flex-direction: column; gap: 0.45rem; list-style: none; }
     .ordering-item {
       display: flex;
       align-items: center;
-      gap: 0.85rem;
-      padding: 0.8rem 1rem;
+      gap: 0.75rem;
+      padding: 0.65rem 0.9rem;
       border-radius: var(--radius-sm);
       border: 1.5px solid var(--border);
       background: var(--surface-2);
       cursor: grab;
-      transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
       user-select: none;
+      transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
     }
     .ordering-item:hover { border-color: var(--accent); background: var(--surface-3); }
-    .ordering-item.dragging {
-      opacity: 0.5;
-      border-color: var(--accent);
-      cursor: grabbing;
-    }
-    .ordering-item.drag-over {
-      border-color: var(--accent-2);
-      box-shadow: 0 0 0 2px var(--accent-2);
-    }
+    .ordering-item.dragging  { opacity: 0.45; cursor: grabbing; border-color: var(--accent); }
+    .ordering-item.drag-over { border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--accent-2); }
     .ordering-item.correct-reveal { border-color: var(--correct); background: var(--correct-bg); }
     .ordering-item.wrong-reveal   { border-color: var(--wrong);   background: var(--wrong-bg); }
     .ordering-item.disabled { cursor: default; pointer-events: none; }
-    .drag-handle { color: var(--text-dim); font-size: 1rem; flex-shrink: 0; }
+    .drag-handle { color: var(--text-dim); flex-shrink: 0; font-size: 0.9rem; }
     .ordering-rank {
-      width: 24px; height: 24px;
+      width: 22px; height: 22px;
       border-radius: 50%;
       border: 1.5px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 700;
+      font-size: 0.7rem; font-weight: 700;
       color: var(--text-muted);
       flex-shrink: 0;
     }
-    .ordering-item-label { flex: 1; font-size: 0.9rem; }
+    .ordering-item-label { flex: 1; font-size: 0.875rem; }
 
      
+    .feedback {
+      display: none;
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 0.9rem;
+      font-size: 0.82rem;
+      margin-top: 0.65rem;
+      flex-shrink: 0;
+      animation: fadeSlideIn 0.25s ease;
+    }
+    .feedback.visible { display: block; }
+    .feedback.correct { background: var(--correct-bg); border: 1px solid var(--correct); color: var(--correct); }
+    .feedback.wrong   { background: var(--wrong-bg);   border: 1px solid var(--wrong);   color: var(--wrong);   }
+    .feedback-title { font-weight: 700; margin-bottom: 0.3rem; }
+    .feedback-explain { color: var(--text); margin-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.45rem; font-size: 0.82rem; }
+    .feedback-explain p { margin-bottom: 0.3rem; }
+    .feedback-explain p:last-child { margin-bottom: 0; }
+
+     
+    .action-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-shrink: 0;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+    .btn-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition), background var(--transition);
+    }
+    .btn-nav:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+    .btn-nav:disabled { opacity: 0.3; cursor: default; }
     .btn-submit {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.6rem 1.4rem;
+      gap: 0.4rem;
+      padding: 0.45rem 1.2rem;
       border-radius: var(--radius-sm);
       border: none;
       background: var(--accent);
       color: #fff;
       font-family: inherit;
-      font-size: 0.875rem;
+      font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
       transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
-      box-shadow: 0 4px 16px var(--accent-glow);
+      box-shadow: 0 3px 14px var(--accent-glow);
     }
-    .btn-submit:hover { opacity: 0.88; transform: translateY(-1px); }
-    .btn-submit:active { transform: translateY(0); }
-    .btn-submit:disabled { opacity: 0.4; cursor: default; transform: none; }
+    .btn-submit:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: 0.35; cursor: default; transform: none; }
+    .spacer { flex: 1; }
 
      
-    .feedback {
-      margin-top: 1.25rem;
-      border-radius: var(--radius-sm);
-      padding: 1rem;
-      font-size: 0.875rem;
+    .summary-page {
       display: none;
-      animation: fadeSlideIn 0.3s ease;
-    }
-    .feedback.visible { display: block; }
-    .feedback.correct {
-      background: var(--correct-bg);
-      border: 1px solid var(--correct);
-      color: var(--correct);
-    }
-    .feedback.wrong {
-      background: var(--wrong-bg);
-      border: 1px solid var(--wrong);
-      color: var(--wrong);
-    }
-    .feedback-title { font-weight: 700; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
-    .feedback-explain { color: var(--text); margin-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.6rem; }
-
-     
-    .score-summary {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
       padding: 2rem;
       text-align: center;
-      scroll-margin-top: calc(var(--header-h) + 3px + 1rem);
     }
-    .score-summary h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .summary-page.active { display: flex; }
+    .summary-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+    .summary-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; }
     .big-score {
-      font-size: 4rem;
+      font-size: 4.5rem;
       font-weight: 800;
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
       line-height: 1;
-      margin: 1rem 0;
+      margin: 0.5rem 0;
     }
-    .score-label { color: var(--text-muted); font-size: 0.9rem; }
-    .score-stats {
-      display: flex;
-      justify-content: center;
-      gap: 2rem;
-      margin-top: 1.5rem;
-      flex-wrap: wrap;
-    }
-    .score-stat { text-align: center; }
-    .score-stat-value { font-size: 1.5rem; font-weight: 700; }
-    .score-stat-value.c { color: var(--correct); }
-    .score-stat-value.w { color: var(--wrong); }
-    .score-stat-value.sk { color: var(--text-muted); }
-    .score-stat-label { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.15rem; }
-
-     
-    .q-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 1rem;
-    }
-    .btn-nav {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.4rem 0.9rem;
+    .summary-label { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .summary-stats { display: flex; gap: 2.5rem; justify-content: center; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat-val { font-size: 1.6rem; font-weight: 700; }
+    .stat-val.c  { color: var(--correct); }
+    .stat-val.w  { color: var(--wrong); }
+    .stat-val.sk { color: var(--text-muted); }
+    .stat-lbl { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.15rem; }
+    .btn-restart {
+      margin-top: 1.75rem;
+      padding: 0.55rem 1.5rem;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
       background: transparent;
       color: var(--text-muted);
-      font-size: 0.8rem;
+      font-family: inherit;
+      font-size: 0.85rem;
       cursor: pointer;
       transition: border-color var(--transition), color var(--transition);
     }
-    .btn-nav:hover { border-color: var(--accent); color: var(--accent); }
-    .btn-nav:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+    .btn-restart:hover { border-color: var(--accent); color: var(--accent); }
 
      
     @keyframes fadeSlideIn {
-      from { opacity: 0; transform: translateY(-6px); }
+      from { opacity: 0; transform: translateY(-4px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
      
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
-
-     
-    @media (max-width: 768px) {
+    @media (max-width: 640px) {
+      :root { --sidebar-w: 0px; }
       .sidebar { display: none; }
-      .main { padding: 1.5rem 1rem; }
-      .quiz-title { font-size: 1.5rem; }
+      .q-page { padding: 1rem; }
+      .topbar { grid-template-columns: 1fr auto; }
+      .topbar-brand { display: none; }
     }
   </style>
 </head>
 <body>
+
   
   <header class="topbar">
-    <div class="topbar-title">
+    <div class="topbar-brand">
       <span class="icon">📚</span>
-      StudyForge Sample Quiz
+      <span class="topbar-brand-name">StudyForge Sample Quiz</span>
     </div>
-    <div class="topbar-meta" id="topbar-score">0 / 7 answered</div>
+    <div class="topbar-center">
+      <span class="q-counter">Question <span id="cur-q" class="val">1</span> of <span>7</span></span>
+    </div>
+    <div class="topbar-end">
+      <div class="score-pill">✓ <span class="val" id="score-correct">0</span> &nbsp;✗ <span class="val" id="score-wrong">0</span></div>
+    </div>
   </header>
 
   
-  <div class="progress-bar-wrap">
-    <div class="progress-bar-fill" id="progress-bar"></div>
+  <div class="progress-wrap">
+    <div class="progress-fill" id="progress-fill"></div>
   </div>
 
-  <div class="layout">
+  
+  <div class="body-layout">
+
     
-    <nav class="sidebar" aria-label="Question navigation">
+    <nav class="sidebar" aria-label="Questions">
       <div class="sidebar-header">
-        <div class="sidebar-label">Questions</div>
-        <div class="score-badge" id="sidebar-score"><span id="sidebar-score-val">0</span> / 7</div>
+        <div class="sidebar-label">All Questions</div>
       </div>
-      <div class="sidebar-nav">
+      <div class="sidebar-scroll">
         
-        <a class="sidebar-item" id="nav-q1" href="#q1" onclick="activateCard('q1')">
-          <span class="sidebar-num">1</span>
-          <span class="sidebar-text">Closest planet to the Sun</span>
-          <span class="sidebar-type-pill">Multiple Choice</span>
-        </a>
+        <div class="nav-item" id="nav-q1" onclick="goTo( 1  - 1)" title="Closest planet to the Sun">
+          <span class="nav-num">1</span>
+          <span class="nav-text">Closest planet to the Sun</span>
+          <span class="nav-badge" id="nav-badge-q1">Multiple Choice</span>
+        </div>
         
-        <a class="sidebar-item" id="nav-q2" href="#q2" onclick="activateCard('q2')">
-          <span class="sidebar-num">2</span>
-          <span class="sidebar-text">Primary colors (RYB)</span>
-          <span class="sidebar-type-pill">Multi-Select</span>
-        </a>
+        <div class="nav-item" id="nav-q2" onclick="goTo( 2  - 1)" title="Primary colors (RYB)">
+          <span class="nav-num">2</span>
+          <span class="nav-text">Primary colors (RYB)</span>
+          <span class="nav-badge" id="nav-badge-q2">Multi-Select</span>
+        </div>
         
-        <a class="sidebar-item" id="nav-q3" href="#q3" onclick="activateCard('q3')">
-          <span class="sidebar-num">3</span>
-          <span class="sidebar-text">The Great Wall visible from space</span>
-          <span class="sidebar-type-pill">True / False</span>
-        </a>
+        <div class="nav-item" id="nav-q3" onclick="goTo( 3  - 1)" title="The Great Wall visible from space">
+          <span class="nav-num">3</span>
+          <span class="nav-text">The Great Wall visible from space</span>
+          <span class="nav-badge" id="nav-badge-q3">True / False</span>
+        </div>
         
-        <a class="sidebar-item" id="nav-q4" href="#q4" onclick="activateCard('q4')">
-          <span class="sidebar-num">4</span>
-          <span class="sidebar-text">Programming language facts</span>
-          <span class="sidebar-type-pill">True / False (Multi)</span>
-        </a>
+        <div class="nav-item" id="nav-q4" onclick="goTo( 4  - 1)" title="Programming language facts">
+          <span class="nav-num">4</span>
+          <span class="nav-text">Programming language facts</span>
+          <span class="nav-badge" id="nav-badge-q4">True / False (Multi)</span>
+        </div>
         
-        <a class="sidebar-item" id="nav-q5" href="#q5" onclick="activateCard('q5')">
-          <span class="sidebar-num">5</span>
-          <span class="sidebar-text">Capital of Japan</span>
-          <span class="sidebar-type-pill">Short Answer</span>
-        </a>
+        <div class="nav-item" id="nav-q5" onclick="goTo( 5  - 1)" title="Capital of Japan">
+          <span class="nav-num">5</span>
+          <span class="nav-text">Capital of Japan</span>
+          <span class="nav-badge" id="nav-badge-q5">Short Answer</span>
+        </div>
         
-        <a class="sidebar-item" id="nav-q6" href="#q6" onclick="activateCard('q6')">
-          <span class="sidebar-num">6</span>
-          <span class="sidebar-text">Order of the planets from the Sun</span>
-          <span class="sidebar-type-pill">Ordering</span>
-        </a>
+        <div class="nav-item" id="nav-q6" onclick="goTo( 6  - 1)" title="Order of the planets from the Sun">
+          <span class="nav-num">6</span>
+          <span class="nav-text">Order of the planets from the Sun</span>
+          <span class="nav-badge" id="nav-badge-q6">Ordering</span>
+        </div>
         
-        <a class="sidebar-item" id="nav-q7" href="#q7" onclick="activateCard('q7')">
-          <span class="sidebar-num">7</span>
-          <span class="sidebar-text">OOP: Polymorphism</span>
-          <span class="sidebar-type-pill">Multiple Choice</span>
-        </a>
+        <div class="nav-item" id="nav-q7" onclick="goTo( 7  - 1)" title="OOP: Polymorphism">
+          <span class="nav-num">7</span>
+          <span class="nav-text">OOP: Polymorphism</span>
+          <span class="nav-badge" id="nav-badge-q7">Multiple Choice</span>
+        </div>
         
+        <div class="nav-item" id="nav-summary" onclick="goToSummary()" title="Score Summary">
+          <span class="nav-num">🏁</span>
+          <span class="nav-text">Summary</span>
+        </div>
       </div>
     </nav>
 
     
-    <main class="main" id="main-content">
-      
-      <div class="quiz-header">
-        <h1 class="quiz-title">StudyForge Sample Quiz</h1>
-        <p class="quiz-author">by StudyForge Demo</p>
-        <p class="quiz-desc">A demonstration quiz covering all supported question types.</p>
-        <div class="quiz-stats">
-          <span class="stat-chip"><span class="dot"></span>7 Questions</span>
-        </div>
-      </div>
+    <div class="stage">
 
       
       
-      <div class="question-card" id="q1" data-type="multiple-choice" data-index="1">
-        <div class="q-header">
-          <div>
-            <div class="q-number-badge">
-              <div class="q-num">1</div>
-              <span class="q-type-pill">Multiple Choice</span>
-            </div>
-            <div class="q-title">Closest planet to the Sun</div>
-          </div>
-          <div class="q-actions">
-            
-            <button class="btn-hint" onclick="toggleHint('q1')">💡 Hint</button>
-            
-          </div>
+      <div class="q-page" id="page-q1" data-idx="1">
+
+        
+        <div class="q-meta">
+          <span class="q-type-pill">Multiple Choice</span>
+          <span class="q-title-text">Closest planet to the Sun</span>
+          
+          <button class="btn-hint-inline" onclick="toggleHint('q1')">💡 Hint</button>
+          
         </div>
 
+        
         
         <div class="hint-box" id="hint-q1">
           <div class="hint-label">Hint</div>
@@ -745,238 +671,220 @@
         
 
         
-        <div class="tag-list">
-          <span class="tag">astronomy</span><span class="tag">solar-system</span>
-        </div>
+        
+        <div class="tag-row"><span class="tag">astronomy</span><span class="tag">solar-system</span></div>
         
 
+        
         <div class="q-prompt"><p>Which planet is closest to the Sun?</p>
 </div>
 
         
-        
-        
-        <div class="choice-list" id="choices-q1">
+        <div class="answers-area">
+
           
-          <div class="choice-item"
-               id="choice-q1-0"
-               data-correct="true"
-               onclick="selectRadio('q1',  0 )">
-            <div class="choice-marker">
-              <span class="choice-check">✓</span>
+          
+          
+          <div class="choice-list" id="choices-q1">
+            
+            <div class="choice-item"
+                 id="choice-q1-0"
+                 data-correct="true"
+                 onclick="selectRadio('q1',  0 )">
+              <div class="choice-marker"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Mercury</span>
             </div>
-            <span class="choice-label">Mercury</span>
+            
+            <div class="choice-item"
+                 id="choice-q1-1"
+                 data-correct="false"
+                 onclick="selectRadio('q1',  1 )">
+              <div class="choice-marker"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Venus</span>
+            </div>
+            
+            <div class="choice-item"
+                 id="choice-q1-2"
+                 data-correct="false"
+                 onclick="selectRadio('q1',  2 )">
+              <div class="choice-marker"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Earth</span>
+            </div>
+            
+            <div class="choice-item"
+                 id="choice-q1-3"
+                 data-correct="false"
+                 onclick="selectRadio('q1',  3 )">
+              <div class="choice-marker"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Mars</span>
+            </div>
+            
           </div>
           
-          <div class="choice-item"
-               id="choice-q1-1"
-               data-correct="false"
-               onclick="selectRadio('q1',  1 )">
-            <div class="choice-marker">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">Venus</span>
-          </div>
+
           
-          <div class="choice-item"
-               id="choice-q1-2"
-               data-correct="false"
-               onclick="selectRadio('q1',  2 )">
-            <div class="choice-marker">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">Earth</span>
-          </div>
           
-          <div class="choice-item"
-               id="choice-q1-3"
-               data-correct="false"
-               onclick="selectRadio('q1',  3 )">
-            <div class="choice-marker">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">Mars</span>
-          </div>
+
           
+          
+
+          
+          
+
+          
+          
+
+          
+          <div class="feedback" id="feedback-q1">
+            <div class="feedback-title" id="feedback-title-q1"></div>
+            
+            <div class="feedback-explain"><p><strong>Mercury</strong> is the closest planet to the Sun, orbiting at an average distance of about 57.9 million km. It completes one orbit every 88 Earth days.</p>
+</div>
+            
+          </div>
+
         </div>
-        
 
         
-        
-
-        
-        
-
-        
-        
-
-        
-        
-
-        
-        <div class="q-nav">
-          <button class="btn-nav" id="prev-q1" onclick="jumpTo( 1  - 2)"
+        <div class="action-bar">
+          <button class="btn-nav" id="prev-q1" onclick="goTo( 1  - 2)"
                   disabled>← Prev</button>
-          <button class="btn-submit" id="submit-q1" onclick="submitQuestion('q1')">
-            Check Answer
-          </button>
-          <button class="btn-nav" id="next-q1" onclick="jumpTo( 1 )"
+          <button class="btn-submit" id="submit-q1" onclick="submitQuestion('q1')">Check Answer</button>
+          <div class="spacer"></div>
+          <button class="btn-nav" id="next-q1" onclick="goTo( 1 )"
                   >Next →</button>
         </div>
 
-        
-        <div class="feedback" id="feedback-q1">
-          <div class="feedback-title" id="feedback-title-q1"></div>
-          
-          <div class="feedback-explain"><p><strong>Mercury</strong> is the closest planet to the Sun, orbiting at an average distance of about 57.9 million km. It completes one orbit every 88 Earth days.</p>
-</div>
-          
-        </div>
       </div>
       
-      <div class="question-card" id="q2" data-type="multi-select" data-index="2">
-        <div class="q-header">
-          <div>
-            <div class="q-number-badge">
-              <div class="q-num">2</div>
-              <span class="q-type-pill">Multi-Select</span>
-            </div>
-            <div class="q-title">Primary colors (RYB)</div>
-          </div>
-          <div class="q-actions">
-            
-          </div>
+      <div class="q-page" id="page-q2" data-idx="2">
+
+        
+        <div class="q-meta">
+          <span class="q-type-pill">Multi-Select</span>
+          <span class="q-title-text">Primary colors (RYB)</span>
+          
         </div>
 
         
-
-        
-        <div class="tag-list">
-          <span class="tag">art</span><span class="tag">color-theory</span>
-        </div>
         
 
+        
+        
+        <div class="tag-row"><span class="tag">art</span><span class="tag">color-theory</span></div>
+        
+
+        
         <div class="q-prompt"><p>Which of the following are <strong>primary colors</strong> in the traditional RYB (Red-Yellow-Blue) color model?</p>
 <p>Select all that apply.</p>
 </div>
 
         
-        
+        <div class="answers-area">
 
-        
-        
-        
-        <div class="choice-list" id="choices-q2">
           
-          <div class="choice-item"
-               id="choice-q2-0"
-               data-correct="true"
-               onclick="toggleCheckbox('q2',  0 )">
-            <div class="choice-marker checkbox">
-              <span class="choice-check">✓</span>
+          
+
+          
+          
+          
+          <div class="choice-list" id="choices-q2">
+            
+            <div class="choice-item"
+                 id="choice-q2-0"
+                 data-correct="true"
+                 onclick="toggleCheckbox('q2',  0 )">
+              <div class="choice-marker checkbox"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Red</span>
             </div>
-            <span class="choice-label">Red</span>
+            
+            <div class="choice-item"
+                 id="choice-q2-1"
+                 data-correct="true"
+                 onclick="toggleCheckbox('q2',  1 )">
+              <div class="choice-marker checkbox"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Yellow</span>
+            </div>
+            
+            <div class="choice-item"
+                 id="choice-q2-2"
+                 data-correct="true"
+                 onclick="toggleCheckbox('q2',  2 )">
+              <div class="choice-marker checkbox"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Blue</span>
+            </div>
+            
+            <div class="choice-item"
+                 id="choice-q2-3"
+                 data-correct="false"
+                 onclick="toggleCheckbox('q2',  3 )">
+              <div class="choice-marker checkbox"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Green</span>
+            </div>
+            
+            <div class="choice-item"
+                 id="choice-q2-4"
+                 data-correct="false"
+                 onclick="toggleCheckbox('q2',  4 )">
+              <div class="choice-marker checkbox"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Orange</span>
+            </div>
+            
+            <div class="choice-item"
+                 id="choice-q2-5"
+                 data-correct="false"
+                 onclick="toggleCheckbox('q2',  5 )">
+              <div class="choice-marker checkbox"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Purple</span>
+            </div>
+            
           </div>
           
-          <div class="choice-item"
-               id="choice-q2-1"
-               data-correct="true"
-               onclick="toggleCheckbox('q2',  1 )">
-            <div class="choice-marker checkbox">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">Yellow</span>
-          </div>
+
           
-          <div class="choice-item"
-               id="choice-q2-2"
-               data-correct="true"
-               onclick="toggleCheckbox('q2',  2 )">
-            <div class="choice-marker checkbox">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">Blue</span>
-          </div>
           
-          <div class="choice-item"
-               id="choice-q2-3"
-               data-correct="false"
-               onclick="toggleCheckbox('q2',  3 )">
-            <div class="choice-marker checkbox">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">Green</span>
-          </div>
+
           
-          <div class="choice-item"
-               id="choice-q2-4"
-               data-correct="false"
-               onclick="toggleCheckbox('q2',  4 )">
-            <div class="choice-marker checkbox">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">Orange</span>
-          </div>
           
-          <div class="choice-item"
-               id="choice-q2-5"
-               data-correct="false"
-               onclick="toggleCheckbox('q2',  5 )">
-            <div class="choice-marker checkbox">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">Purple</span>
-          </div>
+
           
+          
+
+          
+          <div class="feedback" id="feedback-q2">
+            <div class="feedback-title" id="feedback-title-q2"></div>
+            
+            <div class="feedback-explain"><p>In the traditional RYB model used in art and painting, the primary colors are <strong>Red</strong>, <strong>Yellow</strong>, and <strong>Blue</strong>. All other colors can be mixed from these three.</p>
+</div>
+            
+          </div>
+
         </div>
-        
 
         
-        
-
-        
-        
-
-        
-        
-
-        
-        <div class="q-nav">
-          <button class="btn-nav" id="prev-q2" onclick="jumpTo( 2  - 2)"
+        <div class="action-bar">
+          <button class="btn-nav" id="prev-q2" onclick="goTo( 2  - 2)"
                   >← Prev</button>
-          <button class="btn-submit" id="submit-q2" onclick="submitQuestion('q2')">
-            Check Answer
-          </button>
-          <button class="btn-nav" id="next-q2" onclick="jumpTo( 2 )"
+          <button class="btn-submit" id="submit-q2" onclick="submitQuestion('q2')">Check Answer</button>
+          <div class="spacer"></div>
+          <button class="btn-nav" id="next-q2" onclick="goTo( 2 )"
                   >Next →</button>
         </div>
 
-        
-        <div class="feedback" id="feedback-q2">
-          <div class="feedback-title" id="feedback-title-q2"></div>
-          
-          <div class="feedback-explain"><p>In the traditional RYB model used in art and painting, the primary colors are <strong>Red</strong>, <strong>Yellow</strong>, and <strong>Blue</strong>. All other colors can be mixed from these three.</p>
-</div>
-          
-        </div>
       </div>
       
-      <div class="question-card" id="q3" data-type="true-false" data-index="3">
-        <div class="q-header">
-          <div>
-            <div class="q-number-badge">
-              <div class="q-num">3</div>
-              <span class="q-type-pill">True / False</span>
-            </div>
-            <div class="q-title">The Great Wall visible from space</div>
-          </div>
-          <div class="q-actions">
-            
-            <button class="btn-hint" onclick="toggleHint('q3')">💡 Hint</button>
-            
-          </div>
+      <div class="q-page" id="page-q3" data-idx="3">
+
+        
+        <div class="q-meta">
+          <span class="q-type-pill">True / False</span>
+          <span class="q-title-text">The Great Wall visible from space</span>
+          
+          <button class="btn-hint-inline" onclick="toggleHint('q3')">💡 Hint</button>
+          
         </div>
 
+        
         
         <div class="hint-box" id="hint-q3">
           <div class="hint-label">Hint</div>
@@ -985,389 +893,387 @@
         
 
         
-        <div class="tag-list">
-          <span class="tag">geography</span><span class="tag">myths</span>
-        </div>
+        
+        <div class="tag-row"><span class="tag">geography</span><span class="tag">myths</span></div>
         
 
+        
         <div class="q-prompt"><p>The Great Wall of China is visible from space with the naked eye.</p>
 </div>
 
         
-        
-        
-        <div class="choice-list" id="choices-q3">
+        <div class="answers-area">
+
           
-          <div class="choice-item"
-               id="choice-q3-0"
-               data-correct="false"
-               onclick="selectRadio('q3',  0 )">
-            <div class="choice-marker">
-              <span class="choice-check">✓</span>
+          
+          
+          <div class="choice-list" id="choices-q3">
+            
+            <div class="choice-item"
+                 id="choice-q3-0"
+                 data-correct="false"
+                 onclick="selectRadio('q3',  0 )">
+              <div class="choice-marker"><span class="choice-check">✓</span></div>
+              <span class="choice-label">True</span>
             </div>
-            <span class="choice-label">True</span>
+            
+            <div class="choice-item"
+                 id="choice-q3-1"
+                 data-correct="true"
+                 onclick="selectRadio('q3',  1 )">
+              <div class="choice-marker"><span class="choice-check">✓</span></div>
+              <span class="choice-label">False</span>
+            </div>
+            
           </div>
           
-          <div class="choice-item"
-               id="choice-q3-1"
-               data-correct="true"
-               onclick="selectRadio('q3',  1 )">
-            <div class="choice-marker">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">False</span>
-          </div>
+
           
+          
+
+          
+          
+
+          
+          
+
+          
+          
+
+          
+          <div class="feedback" id="feedback-q3">
+            <div class="feedback-title" id="feedback-title-q3"></div>
+            
+            <div class="feedback-explain"><p>This is a popular myth. The Great Wall is long but very narrow (typically 4–5 meters wide), making it impossible to see with the naked eye from low Earth orbit, let alone the Moon.</p>
+</div>
+            
+          </div>
+
         </div>
-        
 
         
-        
-
-        
-        
-
-        
-        
-
-        
-        
-
-        
-        <div class="q-nav">
-          <button class="btn-nav" id="prev-q3" onclick="jumpTo( 3  - 2)"
+        <div class="action-bar">
+          <button class="btn-nav" id="prev-q3" onclick="goTo( 3  - 2)"
                   >← Prev</button>
-          <button class="btn-submit" id="submit-q3" onclick="submitQuestion('q3')">
-            Check Answer
-          </button>
-          <button class="btn-nav" id="next-q3" onclick="jumpTo( 3 )"
+          <button class="btn-submit" id="submit-q3" onclick="submitQuestion('q3')">Check Answer</button>
+          <div class="spacer"></div>
+          <button class="btn-nav" id="next-q3" onclick="goTo( 3 )"
                   >Next →</button>
         </div>
 
-        
-        <div class="feedback" id="feedback-q3">
-          <div class="feedback-title" id="feedback-title-q3"></div>
-          
-          <div class="feedback-explain"><p>This is a popular myth. The Great Wall is long but very narrow (typically 4–5 meters wide), making it impossible to see with the naked eye from low Earth orbit, let alone the Moon.</p>
-</div>
-          
-        </div>
       </div>
       
-      <div class="question-card" id="q4" data-type="multi-true-false" data-index="4">
-        <div class="q-header">
-          <div>
-            <div class="q-number-badge">
-              <div class="q-num">4</div>
-              <span class="q-type-pill">True / False (Multi)</span>
-            </div>
-            <div class="q-title">Programming language facts</div>
-          </div>
-          <div class="q-actions">
-            
-          </div>
+      <div class="q-page" id="page-q4" data-idx="4">
+
+        
+        <div class="q-meta">
+          <span class="q-type-pill">True / False (Multi)</span>
+          <span class="q-title-text">Programming language facts</span>
+          
         </div>
 
         
-
-        
-        <div class="tag-list">
-          <span class="tag">programming</span><span class="tag">history</span>
-        </div>
         
 
+        
+        
+        <div class="tag-row"><span class="tag">programming</span><span class="tag">history</span></div>
+        
+
+        
         <div class="q-prompt"><p>Classify each statement as <strong>True</strong> or <strong>False</strong>:</p>
 </div>
 
         
-        
+        <div class="answers-area">
 
-        
-        
+          
+          
 
-        
-        
-        
-        <div class="mtf-list" id="choices-q4">
           
-          <div class="mtf-row" id="mtfrow-q4-0" data-tfcorrect="true">
-            <span class="mtf-label">Python was created by Guido van Rossum.</span>
-            <div class="mtf-toggle-group">
-              <button class="mtf-btn" id="mtf-q4-0-t" onclick="selectMTF('q4',  0 , true)">T</button>
-              <button class="mtf-btn" id="mtf-q4-0-f" onclick="selectMTF('q4',  0 , false)">F</button>
+          
+
+          
+          
+          
+          <div class="mtf-list" id="choices-q4">
+            
+            <div class="mtf-row" id="mtfrow-q4-0" data-tfcorrect="true">
+              <span class="mtf-label">Python was created by Guido van Rossum.</span>
+              <div class="mtf-toggle-group">
+                <button class="mtf-btn" id="mtf-q4-0-t" onclick="selectMTF('q4',  0 , true)">T</button>
+                <button class="mtf-btn" id="mtf-q4-0-f" onclick="selectMTF('q4',  0 , false)">F</button>
+              </div>
             </div>
+            
+            <div class="mtf-row" id="mtfrow-q4-1" data-tfcorrect="false">
+              <span class="mtf-label">Java was created by Microsoft.</span>
+              <div class="mtf-toggle-group">
+                <button class="mtf-btn" id="mtf-q4-1-t" onclick="selectMTF('q4',  1 , true)">T</button>
+                <button class="mtf-btn" id="mtf-q4-1-f" onclick="selectMTF('q4',  1 , false)">F</button>
+              </div>
+            </div>
+            
+            <div class="mtf-row" id="mtfrow-q4-2" data-tfcorrect="true">
+              <span class="mtf-label">Go was developed at Google.</span>
+              <div class="mtf-toggle-group">
+                <button class="mtf-btn" id="mtf-q4-2-t" onclick="selectMTF('q4',  2 , true)">T</button>
+                <button class="mtf-btn" id="mtf-q4-2-f" onclick="selectMTF('q4',  2 , false)">F</button>
+              </div>
+            </div>
+            
+            <div class="mtf-row" id="mtfrow-q4-3" data-tfcorrect="false">
+              <span class="mtf-label">JavaScript runs exclusively in the browser.</span>
+              <div class="mtf-toggle-group">
+                <button class="mtf-btn" id="mtf-q4-3-t" onclick="selectMTF('q4',  3 , true)">T</button>
+                <button class="mtf-btn" id="mtf-q4-3-f" onclick="selectMTF('q4',  3 , false)">F</button>
+              </div>
+            </div>
+            
           </div>
           
-          <div class="mtf-row" id="mtfrow-q4-1" data-tfcorrect="false">
-            <span class="mtf-label">Java was created by Microsoft.</span>
-            <div class="mtf-toggle-group">
-              <button class="mtf-btn" id="mtf-q4-1-t" onclick="selectMTF('q4',  1 , true)">T</button>
-              <button class="mtf-btn" id="mtf-q4-1-f" onclick="selectMTF('q4',  1 , false)">F</button>
-            </div>
-          </div>
+
           
-          <div class="mtf-row" id="mtfrow-q4-2" data-tfcorrect="true">
-            <span class="mtf-label">Go was developed at Google.</span>
-            <div class="mtf-toggle-group">
-              <button class="mtf-btn" id="mtf-q4-2-t" onclick="selectMTF('q4',  2 , true)">T</button>
-              <button class="mtf-btn" id="mtf-q4-2-f" onclick="selectMTF('q4',  2 , false)">F</button>
-            </div>
-          </div>
           
-          <div class="mtf-row" id="mtfrow-q4-3" data-tfcorrect="false">
-            <span class="mtf-label">JavaScript runs exclusively in the browser.</span>
-            <div class="mtf-toggle-group">
-              <button class="mtf-btn" id="mtf-q4-3-t" onclick="selectMTF('q4',  3 , true)">T</button>
-              <button class="mtf-btn" id="mtf-q4-3-f" onclick="selectMTF('q4',  3 , false)">F</button>
-            </div>
-          </div>
+
           
+          
+
+          
+          <div class="feedback" id="feedback-q4">
+            <div class="feedback-title" id="feedback-title-q4"></div>
+            
+            <div class="feedback-explain"><p>Python → Guido van Rossum ✓. Java → Sun Microsystems (not Microsoft) ✗. Go → Google ✓. JavaScript now also runs on servers via Node.js and Deno ✗.</p>
+</div>
+            
+          </div>
+
         </div>
-        
 
         
-        
-
-        
-        
-
-        
-        <div class="q-nav">
-          <button class="btn-nav" id="prev-q4" onclick="jumpTo( 4  - 2)"
+        <div class="action-bar">
+          <button class="btn-nav" id="prev-q4" onclick="goTo( 4  - 2)"
                   >← Prev</button>
-          <button class="btn-submit" id="submit-q4" onclick="submitQuestion('q4')">
-            Check Answer
-          </button>
-          <button class="btn-nav" id="next-q4" onclick="jumpTo( 4 )"
+          <button class="btn-submit" id="submit-q4" onclick="submitQuestion('q4')">Check Answer</button>
+          <div class="spacer"></div>
+          <button class="btn-nav" id="next-q4" onclick="goTo( 4 )"
                   >Next →</button>
         </div>
 
-        
-        <div class="feedback" id="feedback-q4">
-          <div class="feedback-title" id="feedback-title-q4"></div>
-          
-          <div class="feedback-explain"><p>Python → Guido van Rossum ✓. Java → Sun Microsystems (not Microsoft) ✗. Go → Google ✓. JavaScript now also runs on servers via Node.js and Deno ✗.</p>
-</div>
-          
-        </div>
       </div>
       
-      <div class="question-card" id="q5" data-type="short-answer" data-index="5">
-        <div class="q-header">
-          <div>
-            <div class="q-number-badge">
-              <div class="q-num">5</div>
-              <span class="q-type-pill">Short Answer</span>
-            </div>
-            <div class="q-title">Capital of Japan</div>
-          </div>
-          <div class="q-actions">
-            
-          </div>
+      <div class="q-page" id="page-q5" data-idx="5">
+
+        
+        <div class="q-meta">
+          <span class="q-type-pill">Short Answer</span>
+          <span class="q-title-text">Capital of Japan</span>
+          
         </div>
 
         
-
-        
-        <div class="tag-list">
-          <span class="tag">geography</span>
-        </div>
         
 
+        
+        
+        <div class="tag-row"><span class="tag">geography</span></div>
+        
+
+        
         <div class="q-prompt"><p>What is the capital city of Japan?</p>
 </div>
 
         
-        
+        <div class="answers-area">
 
-        
-        
+          
+          
 
-        
-        
+          
+          
 
-        
-        
-        <div class="short-answer-wrap">
+          
+          
+
+          
+          
           <textarea class="short-answer-input"
                     id="answer-q5"
                     data-expected="Tokyo"
                     placeholder="Type your answer here…"
                     rows="3"></textarea>
+          
+
+          
+          
+
+          
+          <div class="feedback" id="feedback-q5">
+            <div class="feedback-title" id="feedback-title-q5"></div>
+            
+            <div class="feedback-explain"><p><strong>Tokyo</strong> (東京) has been the capital of Japan since 1869, when Emperor Meiji moved the imperial seat there from Kyoto.</p>
+</div>
+            
+          </div>
+
         </div>
-        
 
         
-        
-
-        
-        <div class="q-nav">
-          <button class="btn-nav" id="prev-q5" onclick="jumpTo( 5  - 2)"
+        <div class="action-bar">
+          <button class="btn-nav" id="prev-q5" onclick="goTo( 5  - 2)"
                   >← Prev</button>
-          <button class="btn-submit" id="submit-q5" onclick="submitQuestion('q5')">
-            Check Answer
-          </button>
-          <button class="btn-nav" id="next-q5" onclick="jumpTo( 5 )"
+          <button class="btn-submit" id="submit-q5" onclick="submitQuestion('q5')">Check Answer</button>
+          <div class="spacer"></div>
+          <button class="btn-nav" id="next-q5" onclick="goTo( 5 )"
                   >Next →</button>
         </div>
 
-        
-        <div class="feedback" id="feedback-q5">
-          <div class="feedback-title" id="feedback-title-q5"></div>
-          
-          <div class="feedback-explain"><p><strong>Tokyo</strong> (東京) has been the capital of Japan since 1869, when Emperor Meiji moved the imperial seat there from Kyoto.</p>
-</div>
-          
-        </div>
       </div>
       
-      <div class="question-card" id="q6" data-type="ordering" data-index="6">
-        <div class="q-header">
-          <div>
-            <div class="q-number-badge">
-              <div class="q-num">6</div>
-              <span class="q-type-pill">Ordering</span>
-            </div>
-            <div class="q-title">Order of the planets from the Sun</div>
-          </div>
-          <div class="q-actions">
-            
-          </div>
+      <div class="q-page" id="page-q6" data-idx="6">
+
+        
+        <div class="q-meta">
+          <span class="q-type-pill">Ordering</span>
+          <span class="q-title-text">Order of the planets from the Sun</span>
+          
         </div>
 
         
-
-        
-        <div class="tag-list">
-          <span class="tag">astronomy</span><span class="tag">solar-system</span>
-        </div>
         
 
+        
+        
+        <div class="tag-row"><span class="tag">astronomy</span><span class="tag">solar-system</span></div>
+        
+
+        
         <div class="q-prompt"><p>Drag the planets into the correct order from <strong>closest to farthest</strong> from the Sun:</p>
 </div>
 
         
-        
+        <div class="answers-area">
+
+          
+          
+
+          
+          
+
+          
+          
+
+          
+          
+
+          
+          
+          
+          <ul class="ordering-list" id="ordering-q6">
+            
+            <li class="ordering-item"
+                id="order-item-q6-0"
+                draggable="true"
+                data-correct-order="1"
+                ondragstart="dragStart(event, 'q6')"
+                ondragover="dragOver(event)"
+                ondrop="drop(event, 'q6')"
+                ondragend="dragEnd(event, 'q6')">
+              <span class="drag-handle">⣿</span>
+              <span class="ordering-rank">1</span>
+              <span class="ordering-item-label">Mercury</span>
+            </li>
+            
+            <li class="ordering-item"
+                id="order-item-q6-1"
+                draggable="true"
+                data-correct-order="2"
+                ondragstart="dragStart(event, 'q6')"
+                ondragover="dragOver(event)"
+                ondrop="drop(event, 'q6')"
+                ondragend="dragEnd(event, 'q6')">
+              <span class="drag-handle">⣿</span>
+              <span class="ordering-rank">2</span>
+              <span class="ordering-item-label">Venus</span>
+            </li>
+            
+            <li class="ordering-item"
+                id="order-item-q6-2"
+                draggable="true"
+                data-correct-order="3"
+                ondragstart="dragStart(event, 'q6')"
+                ondragover="dragOver(event)"
+                ondrop="drop(event, 'q6')"
+                ondragend="dragEnd(event, 'q6')">
+              <span class="drag-handle">⣿</span>
+              <span class="ordering-rank">3</span>
+              <span class="ordering-item-label">Earth</span>
+            </li>
+            
+            <li class="ordering-item"
+                id="order-item-q6-3"
+                draggable="true"
+                data-correct-order="4"
+                ondragstart="dragStart(event, 'q6')"
+                ondragover="dragOver(event)"
+                ondrop="drop(event, 'q6')"
+                ondragend="dragEnd(event, 'q6')">
+              <span class="drag-handle">⣿</span>
+              <span class="ordering-rank">4</span>
+              <span class="ordering-item-label">Mars</span>
+            </li>
+            
+            <li class="ordering-item"
+                id="order-item-q6-4"
+                draggable="true"
+                data-correct-order="5"
+                ondragstart="dragStart(event, 'q6')"
+                ondragover="dragOver(event)"
+                ondrop="drop(event, 'q6')"
+                ondragend="dragEnd(event, 'q6')">
+              <span class="drag-handle">⣿</span>
+              <span class="ordering-rank">5</span>
+              <span class="ordering-item-label">Jupiter</span>
+            </li>
+            
+          </ul>
+          
+
+          
+          <div class="feedback" id="feedback-q6">
+            <div class="feedback-title" id="feedback-title-q6"></div>
+            
+            <div class="feedback-explain"><p>The inner solar system order from the Sun is: Mercury → Venus → Earth → Mars → Jupiter (the first gas giant).</p>
+</div>
+            
+          </div>
+
+        </div>
 
         
-        
-
-        
-        
-
-        
-        
-
-        
-        
-        
-        <ul class="ordering-list" id="ordering-q6">
-          
-          <li class="ordering-item"
-              id="order-item-q6-0"
-              draggable="true"
-              data-correct-order="1"
-              ondragstart="dragStart(event, 'q6')"
-              ondragover="dragOver(event)"
-              ondrop="drop(event, 'q6')"
-              ondragend="dragEnd(event, 'q6')">
-            <span class="drag-handle">⣿</span>
-            <span class="ordering-rank">1</span>
-            <span class="ordering-item-label">Mercury</span>
-          </li>
-          
-          <li class="ordering-item"
-              id="order-item-q6-1"
-              draggable="true"
-              data-correct-order="2"
-              ondragstart="dragStart(event, 'q6')"
-              ondragover="dragOver(event)"
-              ondrop="drop(event, 'q6')"
-              ondragend="dragEnd(event, 'q6')">
-            <span class="drag-handle">⣿</span>
-            <span class="ordering-rank">2</span>
-            <span class="ordering-item-label">Venus</span>
-          </li>
-          
-          <li class="ordering-item"
-              id="order-item-q6-2"
-              draggable="true"
-              data-correct-order="3"
-              ondragstart="dragStart(event, 'q6')"
-              ondragover="dragOver(event)"
-              ondrop="drop(event, 'q6')"
-              ondragend="dragEnd(event, 'q6')">
-            <span class="drag-handle">⣿</span>
-            <span class="ordering-rank">3</span>
-            <span class="ordering-item-label">Earth</span>
-          </li>
-          
-          <li class="ordering-item"
-              id="order-item-q6-3"
-              draggable="true"
-              data-correct-order="4"
-              ondragstart="dragStart(event, 'q6')"
-              ondragover="dragOver(event)"
-              ondrop="drop(event, 'q6')"
-              ondragend="dragEnd(event, 'q6')">
-            <span class="drag-handle">⣿</span>
-            <span class="ordering-rank">4</span>
-            <span class="ordering-item-label">Mars</span>
-          </li>
-          
-          <li class="ordering-item"
-              id="order-item-q6-4"
-              draggable="true"
-              data-correct-order="5"
-              ondragstart="dragStart(event, 'q6')"
-              ondragover="dragOver(event)"
-              ondrop="drop(event, 'q6')"
-              ondragend="dragEnd(event, 'q6')">
-            <span class="drag-handle">⣿</span>
-            <span class="ordering-rank">5</span>
-            <span class="ordering-item-label">Jupiter</span>
-          </li>
-          
-        </ul>
-        
-
-        
-        <div class="q-nav">
-          <button class="btn-nav" id="prev-q6" onclick="jumpTo( 6  - 2)"
+        <div class="action-bar">
+          <button class="btn-nav" id="prev-q6" onclick="goTo( 6  - 2)"
                   >← Prev</button>
-          <button class="btn-submit" id="submit-q6" onclick="submitQuestion('q6')">
-            Check Answer
-          </button>
-          <button class="btn-nav" id="next-q6" onclick="jumpTo( 6 )"
+          <button class="btn-submit" id="submit-q6" onclick="submitQuestion('q6')">Check Answer</button>
+          <div class="spacer"></div>
+          <button class="btn-nav" id="next-q6" onclick="goTo( 6 )"
                   >Next →</button>
         </div>
 
-        
-        <div class="feedback" id="feedback-q6">
-          <div class="feedback-title" id="feedback-title-q6"></div>
-          
-          <div class="feedback-explain"><p>The inner solar system order from the Sun is: Mercury → Venus → Earth → Mars → Jupiter (the first gas giant).</p>
-</div>
-          
-        </div>
       </div>
       
-      <div class="question-card" id="q7" data-type="multiple-choice" data-index="7">
-        <div class="q-header">
-          <div>
-            <div class="q-number-badge">
-              <div class="q-num">7</div>
-              <span class="q-type-pill">Multiple Choice</span>
-            </div>
-            <div class="q-title">OOP: Polymorphism</div>
-          </div>
-          <div class="q-actions">
-            
-            <button class="btn-hint" onclick="toggleHint('q7')">💡 Hint</button>
-            
-          </div>
+      <div class="q-page" id="page-q7" data-idx="7">
+
+        
+        <div class="q-meta">
+          <span class="q-type-pill">Multiple Choice</span>
+          <span class="q-title-text">OOP: Polymorphism</span>
+          
+          <button class="btn-hint-inline" onclick="toggleHint('q7')">💡 Hint</button>
+          
         </div>
 
+        
         
         <div class="hint-box" id="hint-q7">
           <div class="hint-label">Hint</div>
@@ -1376,470 +1282,447 @@
         
 
         
-        <div class="tag-list">
-          <span class="tag">programming</span><span class="tag">oop</span>
-        </div>
+        
+        <div class="tag-row"><span class="tag">programming</span><span class="tag">oop</span></div>
         
 
+        
         <div class="q-prompt"><p>Which of the following <strong>best</strong> describes polymorphism in OOP?</p>
 </div>
 
         
-        
-        
-        <div class="choice-list" id="choices-q7">
+        <div class="answers-area">
+
           
-          <div class="choice-item"
-               id="choice-q7-0"
-               data-correct="false"
-               onclick="selectRadio('q7',  0 )">
-            <div class="choice-marker">
-              <span class="choice-check">✓</span>
+          
+          
+          <div class="choice-list" id="choices-q7">
+            
+            <div class="choice-item"
+                 id="choice-q7-0"
+                 data-correct="false"
+                 onclick="selectRadio('q7',  0 )">
+              <div class="choice-marker"><span class="choice-check">✓</span></div>
+              <span class="choice-label">The ability to inherit from multiple classes simultaneously</span>
             </div>
-            <span class="choice-label">The ability to inherit from multiple classes simultaneously</span>
+            
+            <div class="choice-item"
+                 id="choice-q7-1"
+                 data-correct="true"
+                 onclick="selectRadio('q7',  1 )">
+              <div class="choice-marker"><span class="choice-check">✓</span></div>
+              <span class="choice-label">The ability for objects of different types to be treated as instances of a common interface</span>
+            </div>
+            
+            <div class="choice-item"
+                 id="choice-q7-2"
+                 data-correct="false"
+                 onclick="selectRadio('q7',  2 )">
+              <div class="choice-marker"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Bundling data and methods into a single unit</span>
+            </div>
+            
+            <div class="choice-item"
+                 id="choice-q7-3"
+                 data-correct="false"
+                 onclick="selectRadio('q7',  3 )">
+              <div class="choice-marker"><span class="choice-check">✓</span></div>
+              <span class="choice-label">Restricting access to internal object state</span>
+            </div>
+            
           </div>
           
-          <div class="choice-item"
-               id="choice-q7-1"
-               data-correct="true"
-               onclick="selectRadio('q7',  1 )">
-            <div class="choice-marker">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">The ability for objects of different types to be treated as instances of a common interface</span>
-          </div>
+
           
-          <div class="choice-item"
-               id="choice-q7-2"
-               data-correct="false"
-               onclick="selectRadio('q7',  2 )">
-            <div class="choice-marker">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">Bundling data and methods into a single unit</span>
-          </div>
           
-          <div class="choice-item"
-               id="choice-q7-3"
-               data-correct="false"
-               onclick="selectRadio('q7',  3 )">
-            <div class="choice-marker">
-              <span class="choice-check">✓</span>
-            </div>
-            <span class="choice-label">Restricting access to internal object state</span>
-          </div>
+
           
+          
+
+          
+          
+
+          
+          
+
+          
+          <div class="feedback" id="feedback-q7">
+            <div class="feedback-title" id="feedback-title-q7"></div>
+            
+            <div class="feedback-explain"><p><strong>Polymorphism</strong> (from Greek: &quot;many forms&quot;) allows objects of different concrete types to be used interchangeably through a shared interface or base class. This is distinct from multiple inheritance (option A), encapsulation (option C), or information hiding (option D).</p>
+</div>
+            
+          </div>
+
         </div>
-        
 
         
-        
-
-        
-        
-
-        
-        
-
-        
-        
-
-        
-        <div class="q-nav">
-          <button class="btn-nav" id="prev-q7" onclick="jumpTo( 7  - 2)"
+        <div class="action-bar">
+          <button class="btn-nav" id="prev-q7" onclick="goTo( 7  - 2)"
                   >← Prev</button>
-          <button class="btn-submit" id="submit-q7" onclick="submitQuestion('q7')">
-            Check Answer
-          </button>
-          <button class="btn-nav" id="next-q7" onclick="jumpTo( 7 )"
+          <button class="btn-submit" id="submit-q7" onclick="submitQuestion('q7')">Check Answer</button>
+          <div class="spacer"></div>
+          <button class="btn-nav" id="next-q7" onclick="goTo( 7 )"
                   disabled>Next →</button>
         </div>
 
-        
-        <div class="feedback" id="feedback-q7">
-          <div class="feedback-title" id="feedback-title-q7"></div>
-          
-          <div class="feedback-explain"><p><strong>Polymorphism</strong> (from Greek: &quot;many forms&quot;) allows objects of different concrete types to be used interchangeably through a shared interface or base class. This is distinct from multiple inheritance (option A), encapsulation (option C), or information hiding (option D).</p>
-</div>
-          
-        </div>
       </div>
       
 
       
-      <div class="score-summary" id="score-summary">
-        <h2>🎉 Quiz Complete!</h2>
-        <div class="big-score" id="final-pct">—%</div>
-        <div class="score-label" id="final-label">Answer all questions to see your score</div>
-        <div class="score-stats">
-          <div class="score-stat">
-            <div class="score-stat-value c" id="final-correct">0</div>
-            <div class="score-stat-label">Correct</div>
-          </div>
-          <div class="score-stat">
-            <div class="score-stat-value w" id="final-wrong">0</div>
-            <div class="score-stat-label">Wrong</div>
-          </div>
-          <div class="score-stat">
-            <div class="score-stat-value sk" id="final-skipped">7</div>
-            <div class="score-stat-label">Remaining</div>
-          </div>
+      <div class="summary-page" id="page-summary">
+        <div class="summary-icon" id="sum-icon">🎉</div>
+        <div class="summary-title">Quiz Complete!</div>
+        <div class="big-score" id="sum-pct">—%</div>
+        <div class="summary-label" id="sum-label">Answer all questions to see your score.</div>
+        <div class="summary-stats">
+          <div class="stat"><div class="stat-val c" id="sum-correct">0</div><div class="stat-lbl">Correct</div></div>
+          <div class="stat"><div class="stat-val w" id="sum-wrong">0</div><div class="stat-lbl">Incorrect</div></div>
+          <div class="stat"><div class="stat-val sk" id="sum-skip">7</div><div class="stat-lbl">Remaining</div></div>
         </div>
+        <button class="btn-restart" onclick="goTo(0)">← Back to first question</button>
       </div>
-    </main>
+
+    </div>
   </div>
 
-  <script>
-  (() => {
-    'use strict';
+<script>
+(() => {
+  'use strict';
 
-    const TOTAL =  7 ;
+  const TOTAL =  7 ;
+  const ids   = ['q1','q2','q3','q4','q5','q6','q7',];
 
-    
-    const state = {};
-    
-    
-    state['q1'] = { answered: false, correct: false };
-    
-    state['q2'] = { answered: false, correct: false };
-    
-    state['q3'] = { answered: false, correct: false };
-    
-    state['q4'] = { answered: false, correct: false };
-    
-    state['q5'] = { answered: false, correct: false };
-    
-    state['q6'] = { answered: false, correct: false };
-    
-    state['q7'] = { answered: false, correct: false };
-    
+  
+  let current = 0;  
+  const st = {};
+  ids.forEach(id => { st[id] = { answered: false, correct: false }; });
+
+  
+  function goTo(idx) {
+    if (idx < 0) idx = 0;
+    if (idx > TOTAL) idx = TOTAL;
+    current = idx;
 
     
-    const questionIds = ['q1','q2','q3','q4','q5','q6','q7',];
+    ids.forEach(id => {
+      const p = document.getElementById('page-' + id);
+      if (p) p.classList.remove('active');
+    });
+    const sumPage = document.getElementById('page-summary');
+
+    if (idx === TOTAL) {
+      if (sumPage) sumPage.classList.add('active');
+      document.getElementById('nav-summary').classList.add('active');
+    } else {
+      if (sumPage) sumPage.classList.remove('active');
+      document.getElementById('nav-summary').classList.remove('active');
+      const id = ids[idx];
+      const page = document.getElementById('page-' + id);
+      if (page) page.classList.add('active');
+    }
+
+    updateSidebarActive();
+    updateTopbar();
+    updateSummary();
 
     
-    function updateScore() {
-      let answered = 0, correct = 0, wrong = 0;
-      for (const id of questionIds) {
-        if (state[id].answered) {
-          answered++;
-          if (state[id].correct) correct++; else wrong++;
-        }
-      }
-      const skipped = TOTAL - answered;
+    if (idx < TOTAL) {
+      const navEl = document.getElementById('nav-' + ids[idx]);
+      if (navEl) navEl.scrollIntoView({ block: 'nearest' });
+    }
+  }
 
-      document.getElementById('topbar-score').textContent = answered + ' / ' + TOTAL + ' answered';
-      document.getElementById('sidebar-score-val').textContent = correct;
-      document.getElementById('progress-bar').style.width = (answered / TOTAL * 100) + '%';
+  window.goTo = goTo;
+  window.goToSummary = () => goTo(TOTAL);
 
+  function updateTopbar() {
+    const curEl = document.getElementById('cur-q');
+    if (curEl) curEl.textContent = current < TOTAL ? current + 1 : '—';
+
+    let answered = 0, correct = 0, wrong = 0;
+    ids.forEach(id => {
+      if (st[id].answered) { answered++; st[id].correct ? correct++ : wrong++; }
+    });
+    document.getElementById('score-correct').textContent = correct;
+    document.getElementById('score-wrong').textContent   = wrong;
+    document.getElementById('progress-fill').style.width = (answered / TOTAL * 100) + '%';
+  }
+
+  function updateSidebarActive() {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    if (current < TOTAL) {
+      const el = document.getElementById('nav-' + ids[current]);
+      if (el) el.classList.add('active');
+    } else {
+      document.getElementById('nav-summary').classList.add('active');
+    }
+  }
+
+  function updateSidebarItem(id) {
+    const el = document.getElementById('nav-' + id);
+    const badge = document.getElementById('nav-badge-' + id);
+    if (!el) return;
+    el.classList.remove('correct', 'wrong');
+    if (st[id].answered) {
+      el.classList.add(st[id].correct ? 'correct' : 'wrong');
+      if (badge) badge.textContent = st[id].correct ? '✓' : '✗';
+    }
+  }
+
+  function updateSummary() {
+    let answered = 0, correct = 0, wrong = 0;
+    ids.forEach(id => {
+      if (st[id].answered) { answered++; st[id].correct ? correct++ : wrong++; }
+    });
+    document.getElementById('sum-correct').textContent = correct;
+    document.getElementById('sum-wrong').textContent   = wrong;
+    document.getElementById('sum-skip').textContent    = TOTAL - answered;
+    if (answered === TOTAL) {
+      const pct = Math.round(correct / TOTAL * 100);
+      document.getElementById('sum-pct').textContent = pct + '%';
+      const label = pct >= 90 ? '🏆 Excellent!' : pct >= 70 ? '👍 Good job!' : pct >= 50 ? '📖 Keep studying!' : '💪 You\'ve got this!';
+      document.getElementById('sum-label').textContent = label;
+      document.getElementById('sum-icon').textContent  = pct >= 70 ? '🎉' : '📚';
+    } else {
+      document.getElementById('sum-pct').textContent  = '—%';
+      document.getElementById('sum-label').textContent = answered + ' of ' + TOTAL + ' answered.';
+    }
+  }
+
+  
+  window.toggleHint = function(id) {
+    const b = document.getElementById('hint-' + id);
+    if (b) b.classList.toggle('visible');
+  };
+
+  
+  window.selectRadio = function(qid, idx) {
+    if (st[qid].answered) return;
+    document.querySelectorAll('#choices-' + qid + ' .choice-item').forEach((el, i) => {
+      el.classList.toggle('selected', i === idx);
+      el.dataset.userSelected = i === idx ? '1' : '';
+    });
+  };
+
+  
+  window.toggleCheckbox = function(qid, idx) {
+    if (st[qid].answered) return;
+    const el = document.getElementById('choice-' + qid + '-' + idx);
+    if (!el) return;
+    const on = el.classList.toggle('selected');
+    el.dataset.userSelected = on ? '1' : '';
+  };
+
+  
+  window.selectMTF = function(qid, idx, isTrue) {
+    const row = document.getElementById('mtfrow-' + qid + '-' + idx);
+    if (row && row.classList.contains('disabled')) return;
+    const t = document.getElementById('mtf-' + qid + '-' + idx + '-t');
+    const f = document.getElementById('mtf-' + qid + '-' + idx + '-f');
+    if (!t || !f) return;
+    t.classList.remove('selected-t'); delete t.dataset.selected;
+    f.classList.remove('selected-f'); delete f.dataset.selected;
+    if (isTrue) { t.classList.add('selected-t'); t.dataset.selected = 'true'; }
+    else         { f.classList.add('selected-f'); f.dataset.selected = 'false'; }
+  };
+
+  
+  let dragSrc = null;
+  window.dragStart = function(e, qid) {
+    dragSrc = e.currentTarget;
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => { if (dragSrc) dragSrc.classList.add('dragging'); }, 0);
+  };
+  window.dragOver = function(e) {
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.ordering-item').forEach(el => el.classList.remove('drag-over'));
+    e.currentTarget.classList.add('drag-over');
+  };
+  window.drop = function(e, qid) {
+    e.preventDefault();
+    if (!dragSrc || dragSrc === e.currentTarget) return;
+    const dst = e.currentTarget;
+    if (dst.compareDocumentPosition(dragSrc) & Node.DOCUMENT_POSITION_FOLLOWING) {
+      dst.before(dragSrc);
+    } else {
+      dst.after(dragSrc);
+    }
+    refreshOrderRanks(qid);
+  };
+  window.dragEnd = function(e, qid) {
+    document.querySelectorAll('.ordering-item').forEach(el => el.classList.remove('dragging', 'drag-over'));
+    dragSrc = null;
+  };
+  function refreshOrderRanks(qid) {
+    const list = document.getElementById('ordering-' + qid);
+    if (!list) return;
+    list.querySelectorAll('.ordering-rank').forEach((el, i) => { el.textContent = i + 1; });
+  }
+
+  
+  function evaluate(qid) {
+    const card = document.getElementById('page-' + qid);
+    const type = card ? card.closest('.q-page').dataset.type || card.dataset.type : '';
+    const pageEl = document.getElementById('page-' + qid);
+    const t = pageEl ? pageEl.querySelector('[data-type-val]') : null;
+    
+    const qtype = pageEl ? pageEl.getAttribute('data-qtype') : '';
+
+    
+    const choicesEl = document.getElementById('choices-' + qid);
+    const orderEl   = document.getElementById('ordering-' + qid);
+    const answerEl  = document.getElementById('answer-' + qid);
+
+    if (choicesEl) {
+      const items = [...choicesEl.children];
       
-      document.getElementById('final-correct').textContent = correct;
-      document.getElementById('final-wrong').textContent = wrong;
-      document.getElementById('final-skipped').textContent = skipped;
-      if (answered === TOTAL) {
-        const pct = Math.round(correct / TOTAL * 100);
-        document.getElementById('final-pct').textContent = pct + '%';
-        document.getElementById('final-label').textContent =
-          pct >= 90 ? '🏆 Excellent!' : pct >= 70 ? '👍 Good job!' : pct >= 50 ? '📖 Keep studying!' : '💪 You can do it!';
-      }
-    }
+      const isCheckbox = items.length > 0 && items[0].querySelector('.checkbox');
+      const isMtf = items.length > 0 && items[0].classList.contains('mtf-row');
 
-    
-    function updateSidebarItem(id) {
-      const el = document.getElementById('nav-' + id);
-      if (!el) return;
-      el.classList.remove('answered-correct', 'answered-wrong');
-      if (state[id].answered) {
-        el.classList.add(state[id].correct ? 'answered-correct' : 'answered-wrong');
-      }
-    }
-
-    
-    function activateCard(id) {
-      document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
-      const card = document.getElementById(id);
-      if (card) { card.classList.add('active'); }
-      document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-      const nav = document.getElementById('nav-' + id);
-      if (nav) nav.classList.add('active');
-    }
-
-    window.activateCard = activateCard;
-
-    
-    window.jumpTo = function(idx) {
-      if (idx < 0 || idx >= questionIds.length) return;
-      const id = questionIds[idx];
-      const card = document.getElementById(id);
-      if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-      activateCard(id);
-    };
-
-    
-    window.toggleHint = function(id) {
-      const box = document.getElementById('hint-' + id);
-      if (box) box.classList.toggle('visible');
-    };
-
-    
-    window.selectRadio = function(qid, idx) {
-      if (state[qid].answered) return;
-      const choices = document.querySelectorAll('#choices-' + qid + ' .choice-item');
-      choices.forEach(el => el.classList.remove('selected'));
-      const chosen = document.getElementById('choice-' + qid + '-' + idx);
-      if (chosen) { chosen.classList.add('selected'); chosen.dataset.userSelected = '1'; }
-      choices.forEach(el => { if (el !== chosen) delete el.dataset.userSelected; });
-    };
-
-    
-    window.toggleCheckbox = function(qid, idx) {
-      if (state[qid].answered) return;
-      const el = document.getElementById('choice-' + qid + '-' + idx);
-      if (!el) return;
-      el.classList.toggle('selected');
-      el.dataset.userSelected = el.classList.contains('selected') ? '1' : '';
-    };
-
-    
-    window.selectMTF = function(qid, idx, isTrue) {
-      const row = document.getElementById('mtfrow-' + qid + '-' + idx);
-      if (row && row.classList.contains('disabled')) return;
-      const tBtn = document.getElementById('mtf-' + qid + '-' + idx + '-t');
-      const fBtn = document.getElementById('mtf-' + qid + '-' + idx + '-f');
-      if (!tBtn || !fBtn) return;
-      tBtn.classList.remove('selected-t');
-      fBtn.classList.remove('selected-f');
-      if (isTrue) { tBtn.classList.add('selected-t'); tBtn.dataset.selected = 'true'; delete fBtn.dataset.selected; }
-      else         { fBtn.classList.add('selected-f'); fBtn.dataset.selected = 'false'; delete tBtn.dataset.selected; }
-    };
-
-    
-    let dragSrcEl = null;
-    window.dragStart = function(e, qid) {
-      dragSrcEl = e.currentTarget;
-      e.dataTransfer.effectAllowed = 'move';
-      setTimeout(() => { if (dragSrcEl) dragSrcEl.classList.add('dragging'); }, 0);
-    };
-    window.dragOver = function(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      document.querySelectorAll('.ordering-item').forEach(el => el.classList.remove('drag-over'));
-      e.currentTarget.classList.add('drag-over');
-    };
-    window.drop = function(e, qid) {
-      e.preventDefault();
-      if (!dragSrcEl || dragSrcEl === e.currentTarget) return;
-      const list = document.getElementById('ordering-' + qid);
-      const items = [...list.querySelectorAll('.ordering-item')];
-      const srcIdx = items.indexOf(dragSrcEl);
-      const dstIdx = items.indexOf(e.currentTarget);
-      if (srcIdx < dstIdx) { e.currentTarget.after(dragSrcEl); }
-      else                  { e.currentTarget.before(dragSrcEl); }
-      updateOrderRanks(qid);
-    };
-    window.dragEnd = function(e, qid) {
-      document.querySelectorAll('.ordering-item').forEach(el => {
-        el.classList.remove('dragging', 'drag-over');
-      });
-      dragSrcEl = null;
-    };
-    function updateOrderRanks(qid) {
-      const list = document.getElementById('ordering-' + qid);
-      if (!list) return;
-      [...list.querySelectorAll('.ordering-rank')].forEach((el, i) => { el.textContent = i + 1; });
-    }
-
-    
-    
-    
-
-    function evaluateQuestion(qid) {
-      const card = document.getElementById(qid);
-      const type = card.dataset.type;
-
-      if (type === 'multiple-choice' || type === 'true-false') {
-        const choices = document.querySelectorAll('#choices-' + qid + ' .choice-item');
-        let selected = null;
-        choices.forEach(el => { if (el.dataset.userSelected === '1') selected = el; });
-        if (!selected) return null; 
-        return { isCorrect: selected.dataset.correct === 'true' };
-      }
-
-      if (type === 'multi-select') {
-        const choices = document.querySelectorAll('#choices-' + qid + ' .choice-item');
-        let allOk = true;
-        let anySelected = false;
-        choices.forEach(el => {
-          const selected = el.dataset.userSelected === '1';
-          const correct  = el.dataset.correct === 'true';
-          if (selected) anySelected = true;
-          if (selected !== correct) allOk = false;
+      if (isMtf) {
+        
+        let anySelected = false, allOk = true;
+        items.forEach((row, i) => {
+          const tb = document.getElementById('mtf-' + qid + '-' + i + '-t');
+          const fb = document.getElementById('mtf-' + qid + '-' + i + '-f');
+          const userT = tb && tb.dataset.selected === 'true';
+          const userF = fb && fb.dataset.selected === 'false';
+          if (userT || userF) anySelected = true;
+          const exp = row.dataset.tfcorrect;
+          if (exp === 'true'  && !userT) allOk = false;
+          if (exp === 'false' && !userF) allOk = false;
         });
         if (!anySelected) return null;
         return { isCorrect: allOk };
       }
 
-      if (type === 'multi-true-false') {
-        const rows = document.querySelectorAll('#choices-' + qid + ' .mtf-row');
-        let allOk = true, anySelected = false;
-        rows.forEach((row, i) => {
-          const tBtn = document.getElementById('mtf-' + qid + '-' + i + '-t');
-          const fBtn = document.getElementById('mtf-' + qid + '-' + i + '-f');
-          const userTrue  = tBtn && tBtn.dataset.selected === 'true';
-          const userFalse = fBtn && fBtn.dataset.selected === 'false';
-          if (userTrue || userFalse) anySelected = true;
-          
-          const expected = row.dataset.tfcorrect; 
-          if (expected === 'true'  && !userTrue)  allOk = false;
-          if (expected === 'false' && !userFalse) allOk = false;
+      if (isCheckbox) {
+        
+        let anySelected = false, allOk = true;
+        items.forEach(el => {
+          const sel = el.dataset.userSelected === '1';
+          const cor = el.dataset.correct === 'true';
+          if (sel) anySelected = true;
+          if (sel !== cor) allOk = false;
         });
         if (!anySelected) return null;
         return { isCorrect: allOk };
       }
 
-      if (type === 'short-answer') {
-        const input = document.getElementById('answer-' + qid);
-        if (!input || input.value.trim() === '') return null;
-        const expected = input.dataset.expected ? input.dataset.expected.trim().toLowerCase() : null;
-        const isCorrect = expected === null || input.value.trim().toLowerCase() === expected;
-        return { isCorrect };
-      }
-
-      if (type === 'ordering') {
-        const list = document.getElementById('ordering-' + qid);
-        const items = [...list.querySelectorAll('.ordering-item')];
-        const correctOrders = items.map(el => parseInt(el.dataset.correctOrder, 10));
-        
-        
-        const isCorrect = correctOrders.every((val, i) => val === i + 1);
-        return { isCorrect };
-      }
-
-      return null;
+      
+      let chosen = null;
+      items.forEach(el => { if (el.dataset.userSelected === '1') chosen = el; });
+      if (!chosen) return null;
+      return { isCorrect: chosen.dataset.correct === 'true' };
     }
 
+    if (orderEl) {
+      const items = [...orderEl.querySelectorAll('.ordering-item')];
+      const ok = items.every((el, i) => parseInt(el.dataset.correctOrder, 10) === i + 1);
+      return { isCorrect: ok };
+    }
+
+    if (answerEl) {
+      const val = answerEl.value.trim();
+      if (!val) return null;
+      const exp = answerEl.dataset.expected ? answerEl.dataset.expected.trim().toLowerCase() : null;
+      return { isCorrect: exp === null || val.toLowerCase() === exp };
+    }
+
+    return null;
+  }
+
+  
+  window.submitQuestion = function(qid) {
+    if (st[qid].answered) {
+      
+      goTo(current + 1);
+      return;
+    }
+
+    const result = evaluate(qid);
+    if (result === null) {
+      
+      const page = document.getElementById('page-' + qid);
+      if (page) {
+        page.style.outline = '2px solid var(--wrong)';
+        setTimeout(() => { page.style.outline = ''; }, 700);
+      }
+      return;
+    }
+
+    const { isCorrect } = result;
+    st[qid] = { answered: true, correct: isCorrect };
+
     
-    window.submitQuestion = function(qid) {
-      if (state[qid].answered) return;
+    const submitBtn = document.getElementById('submit-' + qid);
+    if (submitBtn) { submitBtn.textContent = 'Next →'; submitBtn.disabled = false; }
 
-      const result = evaluateQuestion(qid);
-      if (result === null) {
-        
-        const card = document.getElementById(qid);
-        card.style.borderColor = 'var(--wrong)';
-        setTimeout(() => { card.style.borderColor = ''; }, 800);
-        return;
-      }
+    
+    const choicesEl = document.getElementById('choices-' + qid);
+    const orderEl   = document.getElementById('ordering-' + qid);
+    const answerEl  = document.getElementById('answer-' + qid);
 
-      const { isCorrect } = result;
-      state[qid] = { answered: true, correct: isCorrect };
+    if (choicesEl) {
+      const items = [...choicesEl.children];
+      const isCheckbox = items.length > 0 && items[0].querySelector('.checkbox');
+      const isMtf = items.length > 0 && items[0].classList.contains('mtf-row');
 
-      
-      const submitBtn = document.getElementById('submit-' + qid);
-      if (submitBtn) submitBtn.disabled = true;
-
-      
-      const card = document.getElementById(qid);
-      card.classList.add(isCorrect ? 'answered-correct' : 'answered-wrong');
-
-      
-      const type = card.dataset.type;
-      if (type === 'multiple-choice' || type === 'true-false' || type === 'multi-select') {
-        const choices = document.querySelectorAll('#choices-' + qid + ' .choice-item');
-        choices.forEach(el => {
-          el.classList.add('disabled');
-          const isCorrectChoice = el.dataset.correct === 'true';
-          const wasSelected     = el.dataset.userSelected === '1';
-          if (isCorrectChoice) { el.classList.add('correct-reveal'); }
-          else if (wasSelected) { el.classList.add('wrong-reveal'); }
-        });
-      }
-
-      if (type === 'multi-true-false') {
-        const rows = document.querySelectorAll('#choices-' + qid + ' .mtf-row');
-        rows.forEach((row, i) => {
+      if (isMtf) {
+        items.forEach((row, i) => {
           row.classList.add('disabled');
-          const tBtn = document.getElementById('mtf-' + qid + '-' + i + '-t');
-          const fBtn = document.getElementById('mtf-' + qid + '-' + i + '-f');
-          const expected = row.dataset.tfcorrect;
-          const userTrue  = tBtn && tBtn.dataset.selected === 'true';
-          const userFalse = fBtn && fBtn.dataset.selected === 'false';
-          if (expected === 'true')  {
-            if (userTrue)  tBtn.classList.add('correct-reveal');
-            else           tBtn.classList.add('wrong-reveal');
-          } else {
-            if (userFalse) fBtn.classList.add('correct-reveal');
-            else           fBtn.classList.add('wrong-reveal');
-          }
+          const tb = document.getElementById('mtf-' + qid + '-' + i + '-t');
+          const fb = document.getElementById('mtf-' + qid + '-' + i + '-f');
+          const exp = row.dataset.tfcorrect;
+          const userT = tb && tb.dataset.selected === 'true';
+          const userF = fb && fb.dataset.selected === 'false';
+          if (exp === 'true')  { tb.classList.add(userT  ? 'correct-reveal' : 'wrong-reveal'); }
+          else                  { fb.classList.add(userF  ? 'correct-reveal' : 'wrong-reveal'); }
         });
-      }
-
-      if (type === 'short-answer') {
-        const input = document.getElementById('answer-' + qid);
-        if (input) input.disabled = true;
-      }
-
-      if (type === 'ordering') {
-        const list = document.getElementById('ordering-' + qid);
-        const items = [...list.querySelectorAll('.ordering-item')];
-        items.forEach((el, i) => {
+      } else {
+        items.forEach(el => {
           el.classList.add('disabled');
-          const correct = parseInt(el.dataset.correctOrder, 10) === i + 1;
-          el.classList.add(correct ? 'correct-reveal' : 'wrong-reveal');
+          if (el.dataset.correct === 'true')   el.classList.add('correct-reveal');
+          else if (el.dataset.userSelected === '1') el.classList.add('wrong-reveal');
         });
       }
-
-      
-      const fb = document.getElementById('feedback-' + qid);
-      const fbTitle = document.getElementById('feedback-title-' + qid);
-      if (fb && fbTitle) {
-        fb.classList.add('visible', isCorrect ? 'correct' : 'wrong');
-        fbTitle.textContent = isCorrect ? '✅ Correct!' : '❌ Incorrect';
-      }
-
-      updateSidebarItem(qid);
-      updateScore();
-    };
+    }
+    if (orderEl) {
+      [...orderEl.querySelectorAll('.ordering-item')].forEach((el, i) => {
+        el.classList.add('disabled');
+        el.classList.add(parseInt(el.dataset.correctOrder, 10) === i + 1 ? 'correct-reveal' : 'wrong-reveal');
+      });
+    }
+    if (answerEl) answerEl.disabled = true;
 
     
-    let currentIdx = 0;
-
-    function getCurrentIdx() {
-      
-      return currentIdx;
+    const fb = document.getElementById('feedback-' + qid);
+    const ft = document.getElementById('feedback-title-' + qid);
+    if (fb && ft) {
+      fb.classList.add('visible', isCorrect ? 'correct' : 'wrong');
+      ft.textContent = isCorrect ? '✅ Correct!' : '❌ Incorrect';
     }
 
-    document.addEventListener('keydown', e => {
-      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-        currentIdx = Math.min(currentIdx + 1, TOTAL - 1);
-        jumpTo(currentIdx);
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-        currentIdx = Math.max(currentIdx - 1, 0);
-        jumpTo(currentIdx);
-      }
-    });
+    updateSidebarItem(qid);
+    updateTopbar();
+    updateSummary();
+  };
 
-    
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const id = entry.target.id;
-          const idx = questionIds.indexOf(id);
-          if (idx >= 0) { currentIdx = idx; activateCard(id); }
-        }
-      });
-    }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+  
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  goTo(current + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    goTo(current - 1);
+    if (e.key === 'Enter' && current < TOTAL) {
+      const id = ids[current];
+      submitQuestion(id);
+    }
+  });
 
-    questionIds.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-
-    
-    updateScore();
-    if (questionIds.length > 0) activateCard(questionIds[0]);
-  })();
-  </script>
+  
+  goTo(0);
+})();
+</script>
 </body>
 </html>
