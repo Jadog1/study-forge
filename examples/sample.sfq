@@ -1,0 +1,100 @@
+# StudyForge Sample Quiz
+author: StudyForge Demo
+description: A demonstration quiz covering all supported question types.
+
+---
+id: q1
+type: multiple-choice
+title: "Closest planet to the Sun"
+hint: "Think about which planet's year is shortest."
+tags: [astronomy, solar-system]
+
+? Which planet is closest to the Sun?
+- [x] Mercury
+- [ ] Venus
+- [ ] Earth
+- [ ] Mars
+
+explanation: **Mercury** is the closest planet to the Sun, orbiting at an average distance of about 57.9 million km. It completes one orbit every 88 Earth days.
+---
+id: q2
+type: multi-select
+title: "Primary colors (RYB)"
+tags: [art, color-theory]
+
+? Which of the following are **primary colors** in the traditional RYB (Red-Yellow-Blue) color model?
+
+Select all that apply.
+
+- [x] Red
+- [x] Yellow
+- [x] Blue
+- [ ] Green
+- [ ] Orange
+- [ ] Purple
+
+explanation: In the traditional RYB model used in art and painting, the primary colors are **Red**, **Yellow**, and **Blue**. All other colors can be mixed from these three.
+---
+id: q3
+type: true-false
+title: "The Great Wall visible from space"
+hint: "Think about the width of the wall compared to a human hair."
+tags: [geography, myths]
+
+? The Great Wall of China is visible from space with the naked eye.
+- [ ] True
+- [x] False
+
+explanation: This is a popular myth. The Great Wall is long but very narrow (typically 4–5 meters wide), making it impossible to see with the naked eye from low Earth orbit, let alone the Moon.
+---
+id: q4
+type: multi-true-false
+title: "Programming language facts"
+tags: [programming, history]
+
+? Classify each statement as **True** or **False**:
+- [T] Python was created by Guido van Rossum.
+- [F] Java was created by Microsoft.
+- [T] Go was developed at Google.
+- [F] JavaScript runs exclusively in the browser.
+
+explanation: Python → Guido van Rossum ✓. Java → Sun Microsystems (not Microsoft) ✗. Go → Google ✓. JavaScript now also runs on servers via Node.js and Deno ✗.
+---
+id: q5
+type: short-answer
+title: "Capital of Japan"
+tags: [geography]
+
+? What is the capital city of Japan?
+answer: "Tokyo"
+
+explanation: **Tokyo** (東京) has been the capital of Japan since 1869, when Emperor Meiji moved the imperial seat there from Kyoto.
+---
+id: q6
+type: ordering
+title: "Order of the planets from the Sun"
+tags: [astronomy, solar-system]
+
+? Drag the planets into the correct order from **closest to farthest** from the Sun:
+1. Mercury
+2. Venus
+3. Earth
+4. Mars
+5. Jupiter
+
+explanation: The inner solar system order from the Sun is: Mercury → Venus → Earth → Mars → Jupiter (the first gas giant).
+---
+id: q7
+type: multiple-choice
+title: "OOP: Polymorphism"
+hint: "Think about how a single interface can represent many different types."
+tags: [programming, oop]
+
+? Which of the following **best** describes polymorphism in OOP?
+
+- [ ] The ability to inherit from multiple classes simultaneously
+- [x] The ability for objects of different types to be treated as instances of a common interface
+- [ ] Bundling data and methods into a single unit
+- [ ] Restricting access to internal object state
+
+explanation: **Polymorphism** (from Greek: "many forms") allows objects of different concrete types to be used interchangeably through a shared interface or base class. This is distinct from multiple inheritance (option A), encapsulation (option C), or information hiding (option D).
