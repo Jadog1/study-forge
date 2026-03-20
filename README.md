@@ -6,6 +6,8 @@ This project is a personal experiment in building a simple quiz generator with a
 
 Note: This was vibe coded as a helpful side tool. Take that for what you will :).
 
+![interactive_quiz.png](interactive_quiz.png)
+
 ## Installation
 
 ```bash
