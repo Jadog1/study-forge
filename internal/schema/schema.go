@@ -90,9 +90,20 @@ func Build(version string) Root {
 				"Unless the user explicitly asks to save answers, persist scores, inspect session history, or start a tracked session, prefer `generate` or `export` instead of `track`.",
 				"`track` launches a local HTTP server and saves answers, timing, and final results under ~/.sfq/sessions/.",
 				"`generate` and `export` produce static HTML only. They do not persist answers or results for later inspection.",
+				"For machine edits to .sfq content, prefer `edit` with a JSON plan rather than free-form text rewrites.",
 			},
 		},
 		Commands: []Command{
+			{
+				Name:        "edit",
+				Description: "Apply a machine-readable JSON edit plan to a .sfq file. Intended for AI agent safe editing workflows.",
+				Args:        []Arg{{Name: "file", Type: "string", Required: true}},
+				Flags: []Flag{
+					{Name: "ops", Type: "string", Description: "Path to JSON edit plan file, or '-' to read plan JSON from stdin. Required."},
+					{Name: "output", Type: "string", Description: "Write edited quiz to this path instead of overwriting the input file."},
+					{Name: "dry-run", Type: "bool", Default: false, Description: "Print the edited .sfq content to stdout without writing files."},
+				},
+			},
 			{
 				Name:        "track",
 				Description: "Start a tracked interactive quiz session using the local HTTP server. This mode saves answers, timing, and final score to persistent session history. Use only when the user explicitly wants tracking or saved results.",

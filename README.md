@@ -35,6 +35,9 @@ sfq export examples/sample.sfq --output my-quiz.html
 # Validate a .sfq file
 sfq validate examples/sample.sfq
 
+# Apply JSON edit operations to a quiz file
+sfq edit examples/sample.sfq --ops edit-plan.json
+
 # Open the last generated quiz
 sfq open
 
@@ -144,6 +147,53 @@ The schema output is designed to be parsed by AI agents for tool-use contexts.
 
 The schema explicitly marks static generation as the default mode for AI agents. Unless the user asks for saved results, tracking, or session history, agents should prefer `sfq generate` or `sfq export` over `sfq track`.
 
+For editing quiz content, use `sfq edit` with a JSON operation plan instead of free-form text rewriting. This gives AI agents a deterministic and safer edit workflow.
+
+Example edit plan:
+
+```json
+{
+  "operations": [
+    {
+      "op": "set-header",
+      "header": {
+        "title": "Updated Quiz Title"
+      }
+    },
+    {
+      "op": "replace-question",
+      "question": "q1",
+      "data": {
+        "id": "q1",
+        "type": "multiple-choice",
+        "title": "Refined question",
+        "prompt": "Which number is even?",
+        "choices": [
+          { "text": "3", "correct": false },
+          { "text": "4", "correct": true }
+        ],
+        "explanation": "4 is divisible by 2."
+      }
+    },
+    {
+      "op": "add-question",
+      "data": {
+        "id": "q-new",
+        "type": "short-answer",
+        "prompt": "What is the capital of France?",
+        "answer": "Paris"
+      }
+    }
+  ]
+}
+```
+
+Apply it:
+
+```bash
+sfq edit examples/sample.sfq --ops edit-plan.json
+```
+
 ## Project Structure
 
 ```text
@@ -153,6 +203,7 @@ study-forge/
 │   └── commands.go      # All CLI commands (generate, export, open, validate, info, schema)
 ├── internal/
 │   ├── parser/          # .sfq file parser
+│   ├── editor/          # JSON operation editor for AI-safe quiz modifications
 │   ├── generator/       # HTML generator + embedded template
 │   ├── state/           # Persistent state (~/.sfq/state.json)
 │   └── schema/          # MCP-like introspection schema

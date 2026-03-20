@@ -4,12 +4,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/tabwriter"
 	"time"
 
+	"github.com/Jadog1/study-forge/internal/editor"
 	"github.com/Jadog1/study-forge/internal/generator"
 	"github.com/Jadog1/study-forge/internal/parser"
 	"github.com/Jadog1/study-forge/internal/schema"
@@ -36,6 +38,7 @@ description of all commands and the .sfq syntax.`,
 
 	root.AddCommand(
 		trackCmd(),
+		editCmd(),
 		generateCmd(),
 		openCmd(),
 		exportCmd(),
@@ -63,6 +66,83 @@ func trackCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&noOpen, "no-open", false, "Do not open the browser automatically")
+	return cmd
+}
+
+// ── edit ─────────────────────────────────────────────────────────────────────
+
+func editCmd() *cobra.Command {
+	var (
+		opsPath string
+		output  string
+		dryRun  bool
+	)
+
+	cmd := &cobra.Command{
+		Use:   "edit <file.sfq>",
+		Short: "Apply a machine-readable JSON edit plan to a .sfq quiz",
+		Long: `Apply machine-friendly JSON operations to a quiz file.
+Use --ops <path.json> or --ops - to read the plan from stdin.
+
+Supported operations:
+  - set-header
+  - add-question
+  - replace-question
+  - delete-question
+  - move-question`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if strings.TrimSpace(opsPath) == "" {
+				return fmt.Errorf("--ops is required")
+			}
+
+			qf, err := parser.ParseFile(args[0])
+			if err != nil {
+				return fmt.Errorf("parse error: %w", err)
+			}
+
+			planBytes, err := readOpsInput(opsPath)
+			if err != nil {
+				return err
+			}
+
+			var plan editor.Plan
+			if err := json.Unmarshal(planBytes, &plan); err != nil {
+				return fmt.Errorf("invalid edit plan JSON: %w", err)
+			}
+			if err := editor.Apply(qf, plan); err != nil {
+				return fmt.Errorf("applying edit plan: %w", err)
+			}
+
+			rendered := parser.Format(qf)
+			if _, err := parser.ParseString(rendered); err != nil {
+				return fmt.Errorf("edited quiz failed validation: %w", err)
+			}
+
+			if dryRun {
+				fmt.Print(rendered)
+				return nil
+			}
+
+			target := args[0]
+			if strings.TrimSpace(output) != "" {
+				target = output
+			}
+
+			if err := os.WriteFile(target, []byte(rendered), 0o644); err != nil {
+				return fmt.Errorf("writing edited quiz: %w", err)
+			}
+
+			absTarget, _ := filepath.Abs(target)
+			fmt.Printf("Edited quiz written: %s\n", absTarget)
+			fmt.Printf("Questions: %d\n", len(qf.Questions))
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&opsPath, "ops", "", "Path to edit plan JSON file, or '-' to read from stdin")
+	cmd.Flags().StringVarP(&output, "output", "o", "", "Output file path (default: overwrite input file)")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Print edited .sfq to stdout instead of writing a file")
 	return cmd
 }
 
@@ -416,6 +496,22 @@ func schemaCmd() *cobra.Command {
 			return enc.Encode(s)
 		},
 	}
+}
+
+func readOpsInput(opsPath string) ([]byte, error) {
+	if opsPath == "-" {
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return nil, fmt.Errorf("reading edit plan from stdin: %w", err)
+		}
+		return data, nil
+	}
+
+	data, err := os.ReadFile(opsPath)
+	if err != nil {
+		return nil, fmt.Errorf("reading edit plan file: %w", err)
+	}
+	return data, nil
 }
 
 // ── shared ────────────────────────────────────────────────────────────────────
