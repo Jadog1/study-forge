@@ -35,7 +35,7 @@ description of all commands and the .sfq syntax.`,
 	}
 
 	root.AddCommand(
-		startCmd(),
+		trackCmd(),
 		generateCmd(),
 		openCmd(),
 		exportCmd(),
@@ -49,26 +49,17 @@ description of all commands and the .sfq syntax.`,
 	return root
 }
 
-// ── start ─────────────────────────────────────────────────────────────────────
+// ── track ─────────────────────────────────────────────────────────────────────
 
-func startCmd() *cobra.Command {
+func trackCmd() *cobra.Command {
 	var noOpen bool
 
 	cmd := &cobra.Command{
-		Use:   "start <file.sfq>",
-		Short: "Start an interactive quiz session (local HTTP server, records answers)",
+		Use:   "track <file.sfq>",
+		Short: "Start a tracked quiz session (local HTTP server, saves answers and score)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			absPath, err := filepath.Abs(args[0])
-			if err != nil {
-				return fmt.Errorf("resolving path: %w", err)
-			}
-			qf, err := parser.ParseFile(absPath)
-			if err != nil {
-				return fmt.Errorf("parse error: %w", err)
-			}
-			fmt.Printf("Starting quiz: %s (%d questions)\n", qf.Title, len(qf.Questions))
-			return server.Run(qf, absPath, !noOpen)
+			return runTrack(args[0], !noOpen)
 		},
 	}
 	cmd.Flags().BoolVar(&noOpen, "no-open", false, "Do not open the browser automatically")
@@ -83,7 +74,7 @@ func generateCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "generate <file.sfq>",
-		Short: "Parse a .sfq file and generate an interactive HTML quiz page",
+		Short: "Generate a static HTML quiz page (does not save answers or score)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runGenerate(args[0], outputPath, !noOpen)
@@ -125,7 +116,7 @@ func exportCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "export <file.sfq>",
-		Short: "Generate HTML from a .sfq file without opening the browser (pipeline-friendly)",
+		Short: "Generate static HTML without opening the browser (pipeline-friendly, no result tracking)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runGenerate(args[0], outputPath, false)
@@ -195,7 +186,7 @@ func historyCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "history",
-		Short: "Browse past quiz sessions interactively (or use --plain/--json for pipelines)",
+		Short: "Browse past tracked quiz sessions interactively (or use --plain/--json for pipelines)",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts := session.ListSessionsFilter{
@@ -268,7 +259,7 @@ func historyCmd() *cobra.Command {
 			if retakeID == "" {
 				return nil
 			}
-			// User pressed `r` — launch a fresh session on the same quiz.
+			// User pressed `r` — launch a fresh tracked session on the same quiz.
 			dir, err := session.SessionDirByID(retakeID)
 			if err != nil {
 				return fmt.Errorf("resolving session: %w", err)
@@ -284,7 +275,7 @@ func historyCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("parse error: %w", err)
 			}
-			fmt.Printf("Retaking: %s (%d questions)\n", qf.Title, len(qf.Questions))
+			fmt.Printf("Retaking tracked quiz: %s (%d questions)\n", qf.Title, len(qf.Questions))
 			return server.Run(qf, meta.QuizFile, true)
 		},
 	}
@@ -305,7 +296,7 @@ func resultsCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "results <session-id>",
-		Short: "Show detailed results for a past quiz session",
+		Short: "Show detailed results for a past tracked quiz session",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sid := args[0]
@@ -384,7 +375,7 @@ func retakeCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "retake <session-id>",
-		Short: "Re-run the quiz from a previous session (starts a fresh session)",
+		Short: "Re-run the quiz from a previous tracked session (starts a fresh tracked session)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sid := args[0]
@@ -397,13 +388,13 @@ func retakeCmd() *cobra.Command {
 				return fmt.Errorf("loading session %q: %w", sid, err)
 			}
 			if _, err := os.Stat(meta.QuizFile); os.IsNotExist(err) {
-				return fmt.Errorf("original quiz file no longer exists: %s\nRun 'sfq start <path>' with the new location instead.", meta.QuizFile)
+				return fmt.Errorf("original quiz file no longer exists: %s\nRun 'sfq track <path>' with the new location instead.", meta.QuizFile)
 			}
 			qf, err := parser.ParseFile(meta.QuizFile)
 			if err != nil {
 				return fmt.Errorf("parse error: %w", err)
 			}
-			fmt.Printf("Retaking: %s (%d questions)\n", qf.Title, len(qf.Questions))
+			fmt.Printf("Retaking tracked quiz: %s (%d questions)\n", qf.Title, len(qf.Questions))
 			return server.Run(qf, meta.QuizFile, !noOpen)
 		},
 	}
@@ -458,6 +449,19 @@ func runGenerate(sourcePath, outputPath string, openAfter bool) error {
 		return server.OpenFile(htmlPath)
 	}
 	return nil
+}
+
+func runTrack(sourcePath string, openBrowser bool) error {
+	absPath, err := filepath.Abs(sourcePath)
+	if err != nil {
+		return fmt.Errorf("resolving path: %w", err)
+	}
+	qf, err := parser.ParseFile(absPath)
+	if err != nil {
+		return fmt.Errorf("parse error: %w", err)
+	}
+	fmt.Printf("Starting tracked quiz: %s (%d questions)\n", qf.Title, len(qf.Questions))
+	return server.Run(qf, absPath, openBrowser)
 }
 
 // truncate shortens s to at most n runes, appending "…" if trimmed.

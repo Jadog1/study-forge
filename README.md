@@ -1,6 +1,10 @@
 # sfq — StudyForge CLI
 
-> AI-friendly CLI tool for generating interactive HTML quiz pages from `.sfq` files.
+> AI-friendly CLI tool for generating interactive HTML quiz pages from `.sfq` files. Provides a schema for AI agent integration and a tracked quiz session mode for detailed performance insights.
+
+This project is a personal experiment in building a simple quiz generator with a custom file format and CLI interface. The `.sfq` format is designed to be human-friendly and easy to write, while the generated HTML quizzes are interactive and visually appealing. The tracked session mode allows users to see detailed analytics about their quiz attempts, making it a useful tool for self-study or educational content creation.
+
+Note: This was vibe coded as a helpful side tool. Take that for what you will :).
 
 ## Installation
 
@@ -11,16 +15,19 @@ go build -o sfq ./cmd/sfq
 Or install directly:
 
 ```bash
-go install github.com/Jadog1/study-forge/cmd/sfq
+go install ./cmd/sfq && export PATH="$(go env GOPATH)/bin:$PATH" && { grep -qxF 'export PATH="$(go env GOPATH)/bin:$PATH"' ~/.bashrc 2>/dev/null || echo 'export PATH="$(go env GOPATH)/bin:$PATH"' >> ~/.bashrc; }
 ```
 
 ## Quick Start
 
 ```bash
-# Generate an HTML quiz and open it in the browser
+# Start a tracked quiz session on the local server
+sfq track examples/sample.sfq
+
+# Generate a static HTML quiz and open it in the browser
 sfq generate examples/sample.sfq
 
-# Generate without opening
+# Generate static HTML without opening
 sfq export examples/sample.sfq --output my-quiz.html
 
 # Validate a .sfq file
@@ -32,6 +39,15 @@ sfq open
 # Show current state
 sfq info
 
+# Browse tracked quiz sessions
+sfq history
+
+# Inspect one session in detail
+sfq results <session-id>
+
+# Start a fresh session from a previous attempt
+sfq retake <session-id>
+
 # Print the full machine-readable schema (for AI agents)
 sfq schema
 ```
@@ -42,7 +58,7 @@ An `.sfq` file consists of an optional header and one or more question blocks se
 
 ### Header (Optional)
 
-```
+```text
 # My Quiz Title
 author: Your Name
 description: A short quiz about X.
@@ -50,7 +66,7 @@ description: A short quiz about X.
 
 ### Question Block
 
-```
+```text
 ---
 id: q1                           # optional — auto-generated as q1, q2, ...
 type: multiple-choice            # see types below; inferred if omitted
@@ -73,7 +89,7 @@ explanation: This explanation is shown after the user answers.
 ### Question Types
 
 | Type | `type:` key | Choice syntax |
-|---|---|---|
+| --- | --- | --- |
 | Multiple Choice | `multiple-choice` | `- [x]` correct, `- [ ]` wrong |
 | Multi-Select | `multi-select` | `- [x]` correct (multiple), `- [ ]` wrong |
 | True / False | `true-false` | `- [x] True` or `- [x] False` |
@@ -82,6 +98,7 @@ explanation: This explanation is shown after the user answers.
 | Ordering | `ordering` | `1. First`, `2. Second`, ... |
 
 The type is **inferred automatically** if omitted:
+
 - Two choices labelled "True"/"False" → `true-false`
 - Multiple `[x]` choices → `multi-select`
 - Any `[T]`/`[F]` markers → `multi-true-false`
@@ -91,6 +108,7 @@ The type is **inferred automatically** if omitted:
 
 ## HTML Features
 
+- **Mode banner** clearly showing whether the page is running in tracked mode or static mode
 - **Sidebar** with all question titles for instant navigation
 - **Progress bar** tracking answered questions
 - **Keyboard navigation** — `←` / `→` arrows to move between questions
@@ -100,6 +118,17 @@ The type is **inferred automatically** if omitted:
 - **Score summary** at the bottom with percentage and breakdown
 - **Fully self-contained** — no external dependencies, works offline
 - **Dark mode** design
+
+## Tracked Session Mode
+
+Use `sfq track <file.sfq>` to launch the local HTTP quiz server instead of generating a static HTML file. This mode:
+
+- records each submitted answer and time spent per question
+- stores final scores and timestamps under `~/.sfq/sessions/`
+- lets you inspect past runs with `sfq history` and `sfq results <session-id>`
+- supports rerunning an earlier quiz with `sfq retake <session-id>`
+
+`sfq generate` and `sfq export` are static modes. They produce a self-contained HTML file, but do not save answers or results for later retrieval.
 
 ## AI Agent Usage
 
@@ -111,9 +140,11 @@ sfq schema | jq '.commands[].name'
 
 The schema output is designed to be parsed by AI agents for tool-use contexts.
 
+The schema explicitly marks static generation as the default mode for AI agents. Unless the user asks for saved results, tracking, or session history, agents should prefer `sfq generate` or `sfq export` over `sfq track`.
+
 ## Project Structure
 
-```
+```text
 study-forge/
 ├── cmd/sfq/
 │   ├── main.go          # Entry point

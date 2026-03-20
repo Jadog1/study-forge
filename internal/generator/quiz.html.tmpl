@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="{{ .Description }}" />
-  <title>{{ .Title }}</title>
+  <title>{{ .Title }}{{ if .ServerMode }} · Tracked Mode{{ else }} · Static Mode{{ end }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -107,6 +107,28 @@
       white-space: nowrap;
     }
     .score-pill .val { color: var(--accent-2); }
+    .mode-pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      border: 1px solid var(--border);
+    }
+    .mode-pill.tracked {
+      color: var(--correct);
+      background: var(--correct-bg);
+      border-color: rgba(34,217,122,0.45);
+    }
+    .mode-pill.static {
+      color: #ffcc66;
+      background: rgba(255,204,102,0.12);
+      border-color: rgba(255,204,102,0.38);
+    }
 
     /* ── Progress Bar ───────────────────────────────────────────────── */
     .progress-wrap {
@@ -120,6 +142,34 @@
       width: 0%;
       transition: width 0.45s ease;
       border-radius: 0 2px 2px 0;
+    }
+    .mode-banner {
+      flex-shrink: 0;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1rem;
+      align-items: baseline;
+    }
+    .mode-banner.tracked {
+      background: linear-gradient(90deg, rgba(34,217,122,0.14), rgba(93,228,199,0.08));
+    }
+    .mode-banner.static {
+      background: linear-gradient(90deg, rgba(255,204,102,0.14), rgba(255,204,102,0.06));
+    }
+    .mode-banner-title {
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .mode-banner.tracked .mode-banner-title { color: var(--correct); }
+    .mode-banner.static .mode-banner-title { color: #ffcc66; }
+    .mode-banner-text {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      max-width: 980px;
     }
 
     /* ── Body Layout ─────────────────────────────────────────────────── */
@@ -529,6 +579,24 @@
       margin: 0.5rem 0;
     }
     .summary-label { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .summary-mode-note {
+      margin-bottom: 1.25rem;
+      max-width: 700px;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      padding: 0.7rem 0.9rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .summary-mode-note.tracked {
+      background: rgba(34,217,122,0.08);
+      border-color: rgba(34,217,122,0.35);
+    }
+    .summary-mode-note.static {
+      background: rgba(255,204,102,0.08);
+      border-color: rgba(255,204,102,0.28);
+    }
     .summary-stats { display: flex; gap: 2.5rem; justify-content: center; flex-wrap: wrap; }
     .stat { text-align: center; }
     .stat-val { font-size: 1.6rem; font-weight: 700; }
@@ -578,6 +646,7 @@
       <span class="q-counter">Question <span id="cur-q" class="val">1</span> of <span>{{ .TotalCount }}</span></span>
     </div>
     <div class="topbar-end">
+      <div class="mode-pill {{ if .ServerMode }}tracked{{ else }}static{{ end }}">{{ if .ServerMode }}Tracked Mode{{ else }}Static Mode{{ end }}</div>
       <div class="score-pill">✓ <span class="val" id="score-correct">0</span> &nbsp;✗ <span class="val" id="score-wrong">0</span></div>
     </div>
   </header>
@@ -586,6 +655,13 @@
   <div class="progress-wrap">
     <div class="progress-fill" id="progress-fill"></div>
   </div>
+
+  <section class="mode-banner {{ if .ServerMode }}tracked{{ else }}static{{ end }}" aria-label="Quiz mode status">
+    <div class="mode-banner-title">{{ if .ServerMode }}Tracked session active{{ else }}Static HTML only{{ end }}</div>
+    <div class="mode-banner-text">
+      {{ if .ServerMode }}This quiz is running in tracking mode. Your submitted answers, time spent, and final score are being saved under ~/.sfq/sessions/.{{ else }}This quiz is a static HTML export. sfq is not saving your answers, timing, or final score anywhere. Use sfq track &lt;file.sfq&gt; when you want a persisted session history under ~/.sfq/sessions/.{{ end }}
+    </div>
+  </section>
 
   <!-- ── Body Layout ───────────────────────────────────────────────── -->
   <div class="body-layout">
@@ -763,6 +839,9 @@
         <div class="summary-title">Quiz Complete!</div>
         <div class="big-score" id="sum-pct">—%</div>
         <div class="summary-label" id="sum-label">Answer all questions to see your score.</div>
+        <div class="summary-mode-note {{ if .ServerMode }}tracked{{ else }}static{{ end }}">
+          {{ if .ServerMode }}Tracked mode is on. Finishing this quiz saves the session for later review in sfq history and sfq results.{{ else }}Static mode is on. This page shows your results now, but sfq does not save them for later review.{{ end }}
+        </div>
         <div class="summary-stats">
           <div class="stat"><div class="stat-val c" id="sum-correct">0</div><div class="stat-lbl">Correct</div></div>
           <div class="stat"><div class="stat-val w" id="sum-wrong">0</div><div class="stat-lbl">Incorrect</div></div>

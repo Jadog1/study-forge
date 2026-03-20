@@ -5,10 +5,17 @@ package schema
 
 // Root is the top-level schema returned by `sfq schema`.
 type Root struct {
-	Tool     string    `json:"tool"`
-	Version  string    `json:"version"`
-	Commands []Command `json:"commands"`
-	Syntax   Syntax    `json:"syntax"`
+	Tool          string        `json:"tool"`
+	Version       string        `json:"version"`
+	AgentGuidance AgentGuidance `json:"agent_guidance"`
+	Commands      []Command     `json:"commands"`
+	Syntax        Syntax        `json:"syntax"`
+}
+
+// AgentGuidance gives AI agents default behavior rules for using sfq safely.
+type AgentGuidance struct {
+	DefaultMode string   `json:"default_mode"`
+	Notes       []string `json:"notes"`
 }
 
 // Command describes a single CLI command.
@@ -66,10 +73,10 @@ type FieldEntry struct {
 
 // TypeSchema describes a specific question type.
 type TypeSchema struct {
-	Type        string `json:"type"`
-	Description string `json:"description"`
+	Type         string `json:"type"`
+	Description  string `json:"description"`
 	ChoiceSyntax string `json:"choice_syntax,omitempty"`
-	Example     string `json:"example"`
+	Example      string `json:"example"`
 }
 
 // Build returns the full schema for sfq.
@@ -77,10 +84,26 @@ func Build(version string) Root {
 	return Root{
 		Tool:    "sfq",
 		Version: version,
+		AgentGuidance: AgentGuidance{
+			DefaultMode: "static",
+			Notes: []string{
+				"Unless the user explicitly asks to save answers, persist scores, inspect session history, or start a tracked session, prefer `generate` or `export` instead of `track`.",
+				"`track` launches a local HTTP server and saves answers, timing, and final results under ~/.sfq/sessions/.",
+				"`generate` and `export` produce static HTML only. They do not persist answers or results for later inspection.",
+			},
+		},
 		Commands: []Command{
 			{
+				Name:        "track",
+				Description: "Start a tracked interactive quiz session using the local HTTP server. This mode saves answers, timing, and final score to persistent session history. Use only when the user explicitly wants tracking or saved results.",
+				Args:        []Arg{{Name: "file", Type: "string", Required: true}},
+				Flags: []Flag{
+					{Name: "no-open", Type: "bool", Default: false, Description: "Do not open the browser automatically after starting the tracked local quiz server."},
+				},
+			},
+			{
 				Name:        "generate",
-				Description: "Parse a .sfq file and generate a self-contained interactive HTML quiz page.",
+				Description: "Parse a .sfq file and generate a self-contained static interactive HTML quiz page. This does not save answers, timing, or results.",
 				Args:        []Arg{{Name: "file", Type: "string", Required: true}},
 				Flags: []Flag{
 					{Name: "output", Type: "string", Description: "Override the output HTML file path. Defaults to <input_basename>.html in the same directory."},
@@ -93,7 +116,7 @@ func Build(version string) Root {
 			},
 			{
 				Name:        "export",
-				Description: "Generate HTML from a .sfq file without opening the browser. Alias for 'generate --no-open'.",
+				Description: "Generate static HTML from a .sfq file without opening the browser. Alias for 'generate --no-open'. No results are saved.",
 				Args:        []Arg{{Name: "file", Type: "string", Required: true}},
 				Flags: []Flag{
 					{Name: "output", Type: "string", Description: "Override the output HTML file path."},
@@ -107,6 +130,35 @@ func Build(version string) Root {
 			{
 				Name:        "info",
 				Description: "Print the current state: last generated file path and timestamp.",
+			},
+			{
+				Name:        "history",
+				Description: "List and browse past tracked quiz sessions. Sessions come from quizzes started with `track` or `retake`.",
+				Flags: []Flag{
+					{Name: "tag", Type: "[]string", Description: "Filter sessions by one or more quiz tags. Repeat the flag to provide multiple tags."},
+					{Name: "since", Type: "string", Description: "Only include sessions on or after this date in YYYY-MM-DD format."},
+					{Name: "until", Type: "string", Description: "Only include sessions on or before this date in YYYY-MM-DD format."},
+					{Name: "limit", Type: "int", Default: 0, Description: "Maximum number of sessions to return. 0 means all matching sessions."},
+					{Name: "offset", Type: "int", Default: 0, Description: "Skip this many matching sessions before returning results."},
+					{Name: "json", Type: "bool", Default: false, Description: "Output session history as JSON for programmatic or AI-agent use."},
+					{Name: "plain", Type: "bool", Default: false, Description: "Output a plain text table instead of launching the interactive history UI."},
+				},
+			},
+			{
+				Name:        "results",
+				Description: "Show detailed results for a previously tracked quiz session, including recorded answers and score.",
+				Args:        []Arg{{Name: "session-id", Type: "string", Required: true}},
+				Flags: []Flag{
+					{Name: "json", Type: "bool", Default: false, Description: "Output the session metadata and recorded answers as JSON."},
+				},
+			},
+			{
+				Name:        "retake",
+				Description: "Start a fresh tracked quiz session using the source file from a previous tracked session.",
+				Args:        []Arg{{Name: "session-id", Type: "string", Required: true}},
+				Flags: []Flag{
+					{Name: "no-open", Type: "bool", Default: false, Description: "Do not open the browser automatically after starting the retake session."},
+				},
 			},
 			{
 				Name:        "schema",
