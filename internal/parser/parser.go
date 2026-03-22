@@ -36,23 +36,33 @@ type Question struct {
 
 // Choice represents a single answer option.
 type Choice struct {
-	Text      string
-	Correct   bool    // for multiple-choice, multi-select
-	TFValue   *bool   // for multi-true-false: true=T, false=F
-	OrderIndex int    // for ordering type
+	Text       string
+	Correct    bool  // for multiple-choice, multi-select
+	TFValue    *bool // for multi-true-false: true=T, false=F
+	OrderIndex int   // for ordering type
 }
 
 // QuestionType enumerates supported question types.
 type QuestionType string
 
 const (
-	TypeMultipleChoice  QuestionType = "multiple-choice"
-	TypeMultiSelect     QuestionType = "multi-select"
-	TypeTrueFalse       QuestionType = "true-false"
-	TypeMultiTrueFalse  QuestionType = "multi-true-false"
-	TypeShortAnswer     QuestionType = "short-answer"
-	TypeOrdering        QuestionType = "ordering"
+	TypeMultipleChoice QuestionType = "multiple-choice"
+	TypeMultiSelect    QuestionType = "multi-select"
+	TypeTrueFalse      QuestionType = "true-false"
+	TypeMultiTrueFalse QuestionType = "multi-true-false"
+	TypeShortAnswer    QuestionType = "short-answer"
+	TypeOrdering       QuestionType = "ordering"
 )
+
+// NormalizeQuestionType rewrites accepted aliases to the canonical internal type names.
+func NormalizeQuestionType(qt QuestionType) QuestionType {
+	switch strings.ToLower(strings.TrimSpace(string(qt))) {
+	case "multiple-true-false":
+		return TypeMultiTrueFalse
+	default:
+		return QuestionType(strings.TrimSpace(string(qt)))
+	}
+}
 
 // ParseFile reads and parses an .sfq file from disk.
 func ParseFile(path string) (*QuizFile, error) {
@@ -199,7 +209,7 @@ func parseQuestionBlock(lines []string, idx int) (Question, error) {
 
 		case strings.HasPrefix(trimmed, "type:"):
 			raw := strings.TrimSpace(strings.TrimPrefix(trimmed, "type:"))
-			q.Type = QuestionType(raw)
+			q.Type = NormalizeQuestionType(QuestionType(raw))
 
 		case strings.HasPrefix(trimmed, "title:"):
 			raw := strings.TrimSpace(strings.TrimPrefix(trimmed, "title:"))
@@ -271,12 +281,44 @@ func parseQuestionBlock(lines []string, idx int) (Question, error) {
 	if q.Type == "" {
 		q.Type = inferType(q)
 	}
+	q.Type = NormalizeQuestionType(q.Type)
+	NormalizeQuestion(&q)
 
 	if q.Prompt == "" {
 		return q, fmt.Errorf("question %s has no prompt (missing '?' line)", q.ID)
 	}
+	if err := validateQuestion(q); err != nil {
+		return q, err
+	}
 
 	return q, nil
+}
+
+// NormalizeQuestion fills in derived fields needed by downstream formatters and renderers.
+func NormalizeQuestion(q *Question) {
+	if q == nil {
+		return
+	}
+	if q.Type != TypeMultiTrueFalse {
+		return
+	}
+	for i := range q.Choices {
+		if q.Choices[i].TFValue != nil {
+			continue
+		}
+		v := q.Choices[i].Correct
+		q.Choices[i].TFValue = &v
+	}
+}
+
+func validateQuestion(q Question) error {
+	switch q.Type {
+	case TypeMultipleChoice, TypeMultiSelect, TypeTrueFalse, TypeMultiTrueFalse, TypeOrdering:
+		if len(q.Choices) == 0 {
+			return fmt.Errorf("question %s type %s requires choices, but none were found", q.ID, q.Type)
+		}
+	}
+	return nil
 }
 
 func parseChoiceLine(line string) (Choice, error) {

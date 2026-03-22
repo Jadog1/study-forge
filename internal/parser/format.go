@@ -27,6 +27,7 @@ func Format(qf *QuizFile) string {
 	}
 
 	for _, q := range qf.Questions {
+		NormalizeQuestion(&q)
 		b.WriteString("---\n")
 		if q.ID != "" {
 			fmt.Fprintf(&b, "id: %s\n", q.ID)

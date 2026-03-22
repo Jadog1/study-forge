@@ -146,6 +146,7 @@ func buildTemplateData(qf *parser.QuizFile, serverMode bool) (*TemplateData, err
 	}
 
 	for i, q := range qf.Questions {
+		parser.NormalizeQuestion(&q)
 		promptHTML, err := renderMD(q.Prompt)
 		if err != nil {
 			return nil, fmt.Errorf("question %s prompt markdown: %w", q.ID, err)

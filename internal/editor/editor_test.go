@@ -96,3 +96,69 @@ id: q2
 		t.Fatalf("expected q2 second, got %s", qf.Questions[1].ID)
 	}
 }
+
+func TestApplyExplicitMultiTrueFalseDerivesTFMarkersFromCorrectFlags(t *testing.T) {
+	qf := &parser.QuizFile{}
+	plan := editor.Plan{
+		Operations: []editor.Operation{{
+			Op: "add-question",
+			Data: &editor.QuestionData{
+				ID:     "q1",
+				Type:   "multi-true-false",
+				Prompt: "Classify each statement.",
+				Choices: []editor.ChoiceData{
+					{Text: "Statement A", Correct: true},
+					{Text: "Statement B", Correct: false},
+				},
+			},
+		}},
+	}
+
+	if err := editor.Apply(qf, plan); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if len(qf.Questions) != 1 {
+		t.Fatalf("expected 1 question, got %d", len(qf.Questions))
+	}
+	q := qf.Questions[0]
+	if q.Choices[0].TFValue == nil || !*q.Choices[0].TFValue {
+		t.Fatalf("first choice TFValue: got %v, want true", q.Choices[0].TFValue)
+	}
+	if q.Choices[1].TFValue == nil || *q.Choices[1].TFValue {
+		t.Fatalf("second choice TFValue: got %v, want false", q.Choices[1].TFValue)
+	}
+
+	out := parser.Format(qf)
+	parsed, err := parser.ParseString(out)
+	if err != nil {
+		t.Fatalf("formatted output should parse: %v", err)
+	}
+	if parsed.Questions[0].Type != parser.TypeMultiTrueFalse {
+		t.Fatalf("Type: got %q, want %q", parsed.Questions[0].Type, parser.TypeMultiTrueFalse)
+	}
+}
+
+func TestApplyMultipleTrueFalseAliasNormalizesType(t *testing.T) {
+	qf := &parser.QuizFile{}
+	plan := editor.Plan{
+		Operations: []editor.Operation{{
+			Op: "add-question",
+			Data: &editor.QuestionData{
+				ID:     "q1",
+				Type:   "multiple-true-false",
+				Prompt: "Classify each statement.",
+				Choices: []editor.ChoiceData{
+					{Text: "Statement A", Correct: true},
+					{Text: "Statement B", Correct: false},
+				},
+			},
+		}},
+	}
+
+	if err := editor.Apply(qf, plan); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if qf.Questions[0].Type != parser.TypeMultiTrueFalse {
+		t.Fatalf("Type: got %q, want %q", qf.Questions[0].Type, parser.TypeMultiTrueFalse)
+	}
+}

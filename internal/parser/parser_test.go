@@ -163,6 +163,128 @@ func TestMultiTrueFalse(t *testing.T) {
 	}
 }
 
+func TestMultiTrueFalseAcceptsCheckboxMarkersWhenTypeIsExplicit(t *testing.T) {
+	src := `
+---
+type: multi-true-false
+
+? Mark each statement true or false.
+- [x] Water is wet.
+- [ ] The Moon is made of cheese.
+---
+`
+
+	qf, err := parser.ParseString(src)
+	if err != nil {
+		t.Fatalf("unexpected parse error: %v", err)
+	}
+	q := qf.Questions[0]
+	if q.Type != parser.TypeMultiTrueFalse {
+		t.Fatalf("Type: got %q, want %q", q.Type, parser.TypeMultiTrueFalse)
+	}
+	if len(q.Choices) != 2 {
+		t.Fatalf("expected 2 choices, got %d", len(q.Choices))
+	}
+	if q.Choices[0].TFValue == nil || !*q.Choices[0].TFValue {
+		t.Fatalf("first choice TFValue: got %v, want true", q.Choices[0].TFValue)
+	}
+	if q.Choices[1].TFValue == nil || *q.Choices[1].TFValue {
+		t.Fatalf("second choice TFValue: got %v, want false", q.Choices[1].TFValue)
+	}
+}
+
+func TestMultipleTrueFalseAliasNormalizesToCanonicalType(t *testing.T) {
+	src := `
+---
+type: multiple-true-false
+
+? Mark each statement true or false.
+- [x] Water is wet.
+- [ ] The Moon is made of cheese.
+---
+`
+
+	qf, err := parser.ParseString(src)
+	if err != nil {
+		t.Fatalf("unexpected parse error: %v", err)
+	}
+	q := qf.Questions[0]
+	if q.Type != parser.TypeMultiTrueFalse {
+		t.Fatalf("Type: got %q, want %q", q.Type, parser.TypeMultiTrueFalse)
+	}
+	if len(q.Choices) != 2 {
+		t.Fatalf("expected 2 choices, got %d", len(q.Choices))
+	}
+	if q.Choices[0].TFValue == nil || !*q.Choices[0].TFValue {
+		t.Fatalf("first choice TFValue: got %v, want true", q.Choices[0].TFValue)
+	}
+	if q.Choices[1].TFValue == nil || *q.Choices[1].TFValue {
+		t.Fatalf("second choice TFValue: got %v, want false", q.Choices[1].TFValue)
+	}
+}
+
+func TestExplicitChoiceBasedQuestionErrorsWhenChoicesMissing(t *testing.T) {
+	src := `
+---
+id: q-004
+type: multi-true-false
+? Determine which statements are correct.
+explanation: Broken transform omitted all statements.
+---
+`
+
+	_, err := parser.ParseString(src)
+	if err == nil {
+		t.Fatal("expected parse error for missing multi-true-false choices, got nil")
+	}
+}
+
+func TestMultipleTrueFalseAliasWithoutChoicesErrors(t *testing.T) {
+	src := `
+---
+id: q-004
+type: multiple-true-false
+? Determine which statements are correct.
+explanation: Broken transform omitted all statements.
+---
+`
+
+	_, err := parser.ParseString(src)
+	if err == nil {
+		t.Fatal("expected parse error for missing aliased multi-true-false choices, got nil")
+	}
+}
+
+func TestFormatMultiTrueFalseFallsBackToCorrectFlags(t *testing.T) {
+	qf := &parser.QuizFile{
+		Questions: []parser.Question{{
+			ID:     "q1",
+			Type:   parser.TypeMultiTrueFalse,
+			Prompt: "Classify each statement.",
+			Choices: []parser.Choice{
+				{Text: "Statement A", Correct: true},
+				{Text: "Statement B", Correct: false},
+			},
+		}},
+	}
+
+	out := parser.Format(qf)
+	parsed, err := parser.ParseString(out)
+	if err != nil {
+		t.Fatalf("formatted output should parse: %v", err)
+	}
+	q := parsed.Questions[0]
+	if len(q.Choices) != 2 {
+		t.Fatalf("expected 2 choices, got %d", len(q.Choices))
+	}
+	if q.Choices[0].TFValue == nil || !*q.Choices[0].TFValue {
+		t.Fatalf("first choice TFValue: got %v, want true", q.Choices[0].TFValue)
+	}
+	if q.Choices[1].TFValue == nil || *q.Choices[1].TFValue {
+		t.Fatalf("second choice TFValue: got %v, want false", q.Choices[1].TFValue)
+	}
+}
+
 const sampleShortAnswer = `
 ---
 type: short-answer

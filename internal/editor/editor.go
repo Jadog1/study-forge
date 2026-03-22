@@ -180,7 +180,7 @@ func applyOp(qf *parser.QuizFile, op Operation) error {
 func toQuestion(d QuestionData) (parser.Question, error) {
 	q := parser.Question{
 		ID:          strings.TrimSpace(d.ID),
-		Type:        parser.QuestionType(strings.TrimSpace(d.Type)),
+		Type:        parser.NormalizeQuestionType(parser.QuestionType(strings.TrimSpace(d.Type))),
 		Title:       d.Title,
 		Prompt:      d.Prompt,
 		Hint:        d.Hint,
@@ -209,6 +209,7 @@ func toQuestion(d QuestionData) (parser.Question, error) {
 	if q.Type == "" {
 		q.Type = inferTypeFromQuestion(q)
 	}
+	parser.NormalizeQuestion(&q)
 	return q, nil
 }
 
