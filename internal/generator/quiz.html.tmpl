@@ -673,10 +673,10 @@
       </div>
       <div class="sidebar-scroll">
         {{ range .Questions }}
-        <div class="nav-item" id="nav-{{ .ID }}" onclick="goTo({{ .Index }} - 1)" title="{{ .Title }}">
+        <div class="nav-item" id="nav-{{ .DOMID }}" onclick="goTo({{ .Index }} - 1)" title="{{ .Title }}">
           <span class="nav-num">{{ .Index }}</span>
           <span class="nav-text">{{ .Title }}</span>
-          <span class="nav-badge" id="nav-badge-{{ .ID }}">{{ .TypeLabel }}</span>
+          <span class="nav-badge" id="nav-badge-{{ .DOMID }}">{{ .TypeLabel }}</span>
         </div>
         {{ end }}
         <div class="nav-item" id="nav-summary" onclick="goToSummary()" title="Score Summary">
@@ -702,20 +702,20 @@
 
       <!-- ── Question Pages ─────────────────────────────────────────── -->
       {{ range .Questions }}
-      <div class="q-page" id="page-{{ .ID }}" data-idx="{{ .Index }}">
+      <div class="q-page" id="page-{{ .DOMID }}" data-idx="{{ .Index }}">
 
         <!-- Meta row -->
         <div class="q-meta">
           <span class="q-type-pill">{{ .TypeLabel }}</span>
           {{ if .Title }}<span class="q-title-text">{{ .Title }}</span>{{ end }}
           {{ if .HasHint }}
-          <button class="btn-hint-inline" onclick="toggleHint('{{ .ID }}')">💡 Hint</button>
+          <button class="btn-hint-inline" onclick="toggleHint('{{ .DOMID }}')">💡 Hint</button>
           {{ end }}
         </div>
 
         <!-- Hint -->
         {{ if .HasHint }}
-        <div class="hint-box" id="hint-{{ .ID }}">
+        <div class="hint-box" id="hint-{{ .DOMID }}">
           <div class="hint-label">Hint</div>
           {{ .Hint }}
         </div>
@@ -734,7 +734,7 @@
 
           <!-- Multiple Choice / True-False -->
           {{ if or (eq .Type "multiple-choice") (eq .Type "true-false") }}
-          {{ $qid := .ID }}
+          {{ $qid := .DOMID }}
           <div class="choice-list" id="choices-{{ $qid }}">
             {{ range $i, $c := .Choices }}
             <div class="choice-item"
@@ -750,7 +750,7 @@
 
           <!-- Multi-Select -->
           {{ if eq .Type "multi-select" }}
-          {{ $qid := .ID }}
+          {{ $qid := .DOMID }}
           <div class="choice-list" id="choices-{{ $qid }}">
             {{ range $i, $c := .Choices }}
             <div class="choice-item"
@@ -766,7 +766,7 @@
 
           <!-- Multi-True-False -->
           {{ if eq .Type "multi-true-false" }}
-          {{ $qid := .ID }}
+          {{ $qid := .DOMID }}
           <div class="mtf-list" id="choices-{{ $qid }}">
             {{ range $i, $c := .Choices }}
             <div class="mtf-row" id="mtfrow-{{ $qid }}-{{ $i }}" data-tfcorrect="{{ $c.TFCorrect }}">
@@ -783,7 +783,7 @@
           <!-- Short Answer -->
           {{ if eq .Type "short-answer" }}
           <textarea class="short-answer-input"
-                    id="answer-{{ .ID }}"
+                    id="answer-{{ .DOMID }}"
                     data-expected="{{ .AnswerText }}"
                     placeholder="Type your answer here…"
                     rows="3"></textarea>
@@ -791,7 +791,7 @@
 
           <!-- Ordering -->
           {{ if eq .Type "ordering" }}
-          {{ $qid := .ID }}
+          {{ $qid := .DOMID }}
           <ul class="ordering-list" id="ordering-{{ $qid }}">
             {{ range $i, $c := .Choices }}
             <li class="ordering-item"
@@ -811,8 +811,8 @@
           {{ end }}
 
           <!-- Feedback (inside answers-area so it scrolls with choices) -->
-          <div class="feedback" id="feedback-{{ .ID }}">
-            <div class="feedback-title" id="feedback-title-{{ .ID }}"></div>
+          <div class="feedback" id="feedback-{{ .DOMID }}">
+            <div class="feedback-title" id="feedback-title-{{ .DOMID }}"></div>
             {{ if .HasExplain }}
             <div class="feedback-explain">{{ html .ExplainHTML }}</div>
             {{ end }}
@@ -822,11 +822,11 @@
 
         <!-- Action bar -->
         <div class="action-bar">
-          <button class="btn-nav" id="prev-{{ .ID }}" onclick="goTo({{ .Index }} - 2)"
+            <button class="btn-nav" id="prev-{{ .DOMID }}" onclick="goTo({{ .Index }} - 2)"
                   {{ if eq .Index 1 }}disabled{{ end }}>← Prev</button>
-          <button class="btn-submit" id="submit-{{ .ID }}" onclick="submitQuestion('{{ .ID }}')">Check Answer</button>
+            <button class="btn-submit" id="submit-{{ .DOMID }}" onclick="submitQuestion('{{ .DOMID }}')">Check Answer</button>
           <div class="spacer"></div>
-          <button class="btn-nav" id="next-{{ .ID }}" onclick="goTo({{ .Index }})"
+            <button class="btn-nav" id="next-{{ .DOMID }}" onclick="goTo({{ .Index }})"
                   {{ if eq .Index $.TotalCount }}disabled{{ end }}>Next →</button>
         </div>
 
@@ -859,14 +859,14 @@
   'use strict';
 
   const TOTAL = {{ .TotalCount }};
-  const ids   = [{{ range .Questions }}'{{ .ID }}',{{ end }}];
+  const ids   = [{{ range .Questions }}'{{ .DOMID }}',{{ end }}];
 
   // ── Server Mode ───────────────────────────────────────────────────
   const SERVER_MODE = {{ if .ServerMode }}true{{ else }}false{{ end }};
 
   // Per-question metadata for server-mode POSTs
   const Q_META = {
-    {{ range .Questions }}'{{ .ID }}': { title: {{ printf "%q" .Title }}, tags: [{{ range .Tags }}{{ printf "%q" . }},{{ end }}], type: '{{ .Type }}' },
+    {{ range .Questions }}'{{ .DOMID }}': { id: {{ printf "%q" .ID }}, title: {{ printf "%q" .Title }}, tags: [{{ range .Tags }}{{ printf "%q" . }},{{ end }}], type: '{{ .Type }}' },
     {{ end }}
   };
 
@@ -1199,8 +1199,8 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          question_id:    qid,
-          question_title: meta.title || qid,
+          question_id:    meta.id || qid,
+          question_title: meta.title || meta.id || qid,
           tags:           meta.tags  || [],
           type:           meta.type  || '',
           correct:        isCorrect,
@@ -1229,22 +1229,27 @@
     // Heartbeat every 5 s so the server knows the window is still open
     setInterval(() => { fetch('/heartbeat', { method: 'POST' }).catch(() => {}); }, 5000);
 
+    const finishSession = () => {
+      let correct = 0, incorrect = 0;
+      ids.forEach(id => {
+        if (st[id].answered) { st[id].correct ? correct++ : incorrect++; }
+      });
+      const skipped = TOTAL - correct - incorrect;
+      fetch('/finish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correct, incorrect, skipped }),
+      }).catch(() => {}).finally(() => window.close());
+    };
+
+    // Sidebar finish button exists only in server mode.
+    window.sidebarFinish = finishSession;
+
     // Wire up the Finish Session button (revealed in server mode)
     const finishBtn = document.getElementById('btn-finish-session');
     if (finishBtn) {
       finishBtn.style.display = 'inline-flex';
-      finishBtn.addEventListener('click', () => {
-        let correct = 0, incorrect = 0;
-        ids.forEach(id => {
-          if (st[id].answered) { st[id].correct ? correct++ : incorrect++; }
-        });
-        const skipped = TOTAL - correct - incorrect;
-        fetch('/finish', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ correct, incorrect, skipped }),
-        }).catch(() => {}).finally(() => window.close());
-      });
+      finishBtn.addEventListener('click', finishSession);
     }
   }
 })();

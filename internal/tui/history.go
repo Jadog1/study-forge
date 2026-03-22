@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
@@ -91,15 +92,50 @@ type errMsg struct{ err error }
 
 // HistoryModel is the BubbleTea model for browsing session history.
 type HistoryModel struct {
-	view             viewState
-	list             list.Model
-	detail           session.Session
-	answers          []session.Answer
-	width            int
-	height           int
-	err              string
-	scroll           int    // scroll offset in detail view
-	RetakeSessionID  string // set when user presses r in detail view
+	view            viewState
+	list            list.Model
+	detail          session.Session
+	answers         []session.Answer
+	detailViewport  viewport.Model
+	width           int
+	height          int
+	err             string
+	RetakeSessionID string // set when user presses r in detail view
+}
+
+func (m HistoryModel) detailInnerHeight() int {
+	if m.height-6 < 1 {
+		return 1
+	}
+	return m.height - 6
+}
+
+func (m HistoryModel) detailBoxWidth() int {
+	if m.width-4 < 10 {
+		return 10
+	}
+	return m.width - 4
+}
+
+func (m HistoryModel) detailInnerWidth() int {
+	// Rounded border + horizontal padding consume 6 columns.
+	if m.detailBoxWidth()-6 < 1 {
+		return 1
+	}
+	return m.detailBoxWidth() - 6
+}
+
+// syncDetailViewport rebuilds the viewport content and resizes it.
+// Pass goTop=true when first entering the detail view so the header is always visible.
+func (m HistoryModel) syncDetailViewport(goTop bool) HistoryModel {
+	m.detailViewport.Width = m.detailInnerWidth()
+	m.detailViewport.Height = m.detailInnerHeight()
+	content := strings.Join(buildDetailLines(m.detail, m.answers), "\n")
+	m.detailViewport.SetContent(content)
+	if goTop {
+		m.detailViewport.GotoTop()
+	}
+	return m
 }
 
 // NewHistory creates a HistoryModel populated with the given sessions.
@@ -119,7 +155,9 @@ func NewHistory(sessions []session.Session) HistoryModel {
 	l.SetShowStatusBar(true)
 	l.SetFilteringEnabled(true)
 
-	return HistoryModel{list: l, view: viewList}
+	vp := viewport.New(1, 1)
+
+	return HistoryModel{list: l, view: viewList, detailViewport: vp}
 }
 
 func (m HistoryModel) Init() tea.Cmd { return nil }
@@ -146,13 +184,18 @@ func (m HistoryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		m.list.SetSize(msg.Width, msg.Height)
+		if m.view == viewDetail {
+			// Resize only — preserve scroll position so the user stays where they are.
+			m = m.syncDetailViewport(false)
+		}
 		return m, nil
 
 	case answersLoadedMsg:
 		m.detail = msg.sess
 		m.answers = msg.answers
 		m.view = viewDetail
-		m.scroll = 0
+		// Always show the header when first opening a session.
+		m = m.syncDetailViewport(true)
 		return m, nil
 
 	case errMsg:
@@ -189,7 +232,6 @@ func (m HistoryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "q", "esc", "b":
 				m.view = viewList
 				m.answers = nil
-				m.scroll = 0
 				return m, nil
 			case "r":
 				m.RetakeSessionID = m.detail.SessionID
@@ -201,16 +243,19 @@ func (m HistoryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.list.RemoveItem(m.list.Index())
 					m.view = viewList
 					m.answers = nil
-					m.scroll = 0
 				}
 				return m, nil
 			case "up", "k":
-				if m.scroll > 0 {
-					m.scroll--
-				}
+				m.detailViewport.LineUp(1)
 				return m, nil
 			case "down", "j":
-				m.scroll++
+				m.detailViewport.LineDown(1)
+				return m, nil
+			case "pgup", "u":
+				m.detailViewport.HalfViewUp()
+				return m, nil
+			case "pgdown", "f":
+				m.detailViewport.HalfViewDown()
 				return m, nil
 			}
 		}
@@ -240,7 +285,13 @@ func (m HistoryModel) View() string {
 }
 
 func (m HistoryModel) renderDetail() string {
-	s := m.detail
+	// View() must be side-effect-free: never call SetContent here.
+	return detailBox.
+		Width(m.detailBoxWidth()).
+		Render(m.detailViewport.View())
+}
+
+func buildDetailLines(s session.Session, answers []session.Answer) []string {
 	var lines []string
 
 	// ── Header ──
@@ -276,10 +327,10 @@ func (m HistoryModel) renderDetail() string {
 	lines = append(lines, strings.Repeat("─", 58))
 
 	// ── Answers ──
-	if len(m.answers) == 0 {
+	if len(answers) == 0 {
 		lines = append(lines, dimStyle.Render("No answers recorded for this session."))
 	} else {
-		for i, a := range m.answers {
+		for i, a := range answers {
 			mark := correctStyle.Render("✅")
 			if !a.Correct {
 				mark = wrongStyle.Render("❌")
@@ -297,21 +348,7 @@ func (m HistoryModel) renderDetail() string {
 	lines = append(lines, "")
 	lines = append(lines, helpStyle.Render("b/esc · back   ↑/↓ · scroll   r · retake   d · delete   q · quit"))
 
-	// ── Scroll ──
-	innerH := m.height - 6 // account for box border + padding
-	if m.scroll > 0 && m.scroll >= len(lines) {
-		m.scroll = max(0, len(lines)-1)
-	}
-	visible := lines
-	if m.scroll < len(lines) {
-		visible = lines[m.scroll:]
-	}
-	if len(visible) > innerH {
-		visible = visible[:innerH]
-	}
-
-	content := strings.Join(visible, "\n")
-	return detailBox.Width(m.width - 4).Render(content)
+	return lines
 }
 
 // RunHistory launches the interactive history TUI.

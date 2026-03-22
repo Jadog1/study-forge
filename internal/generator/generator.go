@@ -3,8 +3,8 @@
 package generator
 
 import (
-	_ "embed"
 	"bytes"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"os"
@@ -86,7 +86,8 @@ type TemplateData struct {
 // QuestionData is the per-question data model for the template.
 type QuestionData struct {
 	ID          string
-	Index       int // 1-based
+	DOMID       string // unique DOM-safe identifier for this rendered question instance
+	Index       int    // 1-based
 	Type        string
 	TypeLabel   string
 	Title       string
@@ -156,6 +157,7 @@ func buildTemplateData(qf *parser.QuizFile, serverMode bool) (*TemplateData, err
 
 		qd := QuestionData{
 			ID:          q.ID,
+			DOMID:       fmt.Sprintf("q-%03d", i+1),
 			Index:       i + 1,
 			Type:        string(q.Type),
 			TypeLabel:   typeLabels[q.Type],
