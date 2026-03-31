@@ -349,9 +349,16 @@
       color: var(--text);
       margin-bottom: 1rem;
       flex-shrink: 0;
+      max-height: 34vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+      padding-right: 4px;
     }
     .q-prompt p { margin-bottom: 0.4rem; }
     .q-prompt p:last-child { margin-bottom: 0; }
+    .q-prompt::-webkit-scrollbar { width: 4px; }
+    .q-prompt::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
     .q-prompt code {
       font-size: 0.875em;
       background: var(--surface-3);
@@ -629,6 +636,7 @@
       :root { --sidebar-w: 0px; }
       .sidebar { display: none; }
       .q-page { padding: 1rem; }
+      .q-prompt { max-height: 30vh; }
       .topbar { grid-template-columns: 1fr auto; }
       .topbar-brand { display: none; }
     }
