@@ -398,6 +398,8 @@
     .choice-item.selected { border-color: var(--accent); background: rgba(124,106,240,0.1); }
     .choice-item.correct-reveal { border-color: var(--correct) !important; background: var(--correct-bg) !important; }
     .choice-item.wrong-reveal   { border-color: var(--wrong)   !important; background: var(--wrong-bg)   !important; }
+    .choice-item.user-picked { box-shadow: inset 0 0 0 1px rgba(124,106,240,0.8); }
+    .choice-item.missed-correct { border-style: dashed; }
     .choice-item.disabled { cursor: default; pointer-events: none; }
     .choice-marker {
       width: 18px; height: 18px;
@@ -417,6 +419,21 @@
     .choice-item.correct-reveal .choice-check,
     .choice-item.wrong-reveal   .choice-check { display: block; }
     .choice-label { flex: 1; font-size: 0.875rem; line-height: 1.4; }
+    .choice-state {
+      flex-shrink: 0;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.14rem 0.48rem;
+      color: var(--text-dim);
+      background: var(--surface);
+    }
+    .choice-state.user { color: var(--accent); border-color: var(--accent); background: rgba(124,106,240,0.12); }
+    .choice-state.correct { color: var(--correct); border-color: var(--correct); background: var(--correct-bg); }
+    .choice-state.wrong { color: var(--wrong); border-color: var(--wrong); background: var(--wrong-bg); }
 
     /* ── Multi-True-False ────────────────────────────────────────────── */
     .mtf-list { display: flex; flex-direction: column; gap: 0.45rem; }
@@ -447,7 +464,15 @@
     .mtf-btn.selected-f { border-color: var(--wrong);   color: var(--wrong);   background: var(--wrong-bg);   }
     .mtf-btn.correct-reveal { border-color: var(--correct) !important; color: var(--correct) !important; background: var(--correct-bg) !important; }
     .mtf-btn.wrong-reveal   { border-color: var(--wrong)   !important; color: var(--wrong)   !important; background: var(--wrong-bg)   !important; }
+    .mtf-btn.user-picked { box-shadow: inset 0 0 0 1px rgba(124,106,240,0.85); }
     .mtf-row.disabled .mtf-btn { cursor: default; pointer-events: none; }
+    .mtf-state {
+      margin-top: 0.45rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+    .mtf-state .good { color: var(--correct); font-weight: 700; }
+    .mtf-state .bad { color: var(--wrong); font-weight: 700; }
 
     /* ── Short Answer ────────────────────────────────────────────────── */
     .short-answer-input {
@@ -498,6 +523,20 @@
       flex-shrink: 0;
     }
     .ordering-item-label { flex: 1; font-size: 0.875rem; }
+    .ordering-state {
+      flex-shrink: 0;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.15rem 0.48rem;
+      color: var(--text-dim);
+      background: var(--surface);
+    }
+    .ordering-state.correct { color: var(--correct); border-color: var(--correct); background: var(--correct-bg); }
+    .ordering-state.wrong { color: var(--wrong); border-color: var(--wrong); background: var(--wrong-bg); }
 
     /* ── Feedback ────────────────────────────────────────────────────── */
     .feedback {
@@ -516,6 +555,51 @@
     .feedback-explain { color: var(--text); margin-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.45rem; font-size: 0.82rem; }
     .feedback-explain p { margin-bottom: 0.3rem; }
     .feedback-explain p:last-child { margin-bottom: 0; }
+
+    .answer-summary {
+      margin-top: 0.55rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: grid;
+      gap: 0.5rem;
+    }
+    .answer-summary-row {
+      display: grid;
+      grid-template-columns: 132px 1fr;
+      align-items: flex-start;
+      gap: 0.65rem;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: var(--text);
+    }
+    .answer-summary-label {
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 0.68rem;
+      padding-top: 0.14rem;
+    }
+    .answer-summary-value {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.42rem;
+      align-items: center;
+    }
+    .answer-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      padding: 0.18rem 0.52rem;
+      font-size: 0.73rem;
+      color: var(--text);
+      max-width: 100%;
+      word-break: break-word;
+    }
+    .answer-chip.correct { border-color: var(--correct); background: var(--correct-bg); color: var(--correct); }
+    .answer-chip.wrong { border-color: var(--wrong); background: var(--wrong-bg); color: var(--wrong); }
 
     /* ── Action bar ──────────────────────────────────────────────────── */
     .action-bar {
@@ -639,6 +723,7 @@
       .q-prompt { max-height: 30vh; }
       .topbar { grid-template-columns: 1fr auto; }
       .topbar-brand { display: none; }
+      .answer-summary-row { grid-template-columns: 1fr; gap: 0.25rem; }
     }
   </style>
 </head>
@@ -1051,6 +1136,118 @@
     list.querySelectorAll('.ordering-rank').forEach((el, i) => { el.textContent = i + 1; });
   }
 
+  function pickText(el, selector) {
+    const node = el.querySelector(selector);
+    return node ? node.textContent.trim() : '';
+  }
+
+  function clearChoiceStateBadges(qid) {
+    document.querySelectorAll('#choices-' + qid + ' .choice-state').forEach(el => el.remove());
+    document.querySelectorAll('#ordering-' + qid + ' .ordering-state').forEach(el => el.remove());
+    document.querySelectorAll('#choices-' + qid + ' .mtf-state').forEach(el => el.remove());
+  }
+
+  function addStateBadge(item, text, cls) {
+    const b = document.createElement('span');
+    b.className = 'choice-state ' + cls;
+    b.textContent = text;
+    item.appendChild(b);
+  }
+
+  function addOrderingState(item, text, cls) {
+    const b = document.createElement('span');
+    b.className = 'ordering-state ' + cls;
+    b.textContent = text;
+    item.appendChild(b);
+  }
+
+  function addMTFState(row, html) {
+    const s = document.createElement('div');
+    s.className = 'mtf-state';
+    s.innerHTML = html;
+    row.appendChild(s);
+  }
+
+  function renderAnswerSummary(qid) {
+    const fb = document.getElementById('feedback-' + qid);
+    if (!fb) return;
+
+    const existing = document.getElementById('answer-summary-' + qid);
+    if (existing) existing.remove();
+
+    const summary = document.createElement('div');
+    summary.className = 'answer-summary';
+    summary.id = 'answer-summary-' + qid;
+
+    function row(label, values, variant) {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'answer-summary-row';
+      const lab = document.createElement('div');
+      lab.className = 'answer-summary-label';
+      lab.textContent = label;
+      const val = document.createElement('div');
+      val.className = 'answer-summary-value';
+      (values && values.length ? values : ['(none)']).forEach(v => {
+        const chip = document.createElement('span');
+        chip.className = 'answer-chip' + (variant ? (' ' + variant) : '');
+        chip.textContent = v;
+        val.appendChild(chip);
+      });
+      rowEl.appendChild(lab);
+      rowEl.appendChild(val);
+      summary.appendChild(rowEl);
+    }
+
+    const choicesEl = document.getElementById('choices-' + qid);
+    const orderEl = document.getElementById('ordering-' + qid);
+    const answerEl = document.getElementById('answer-' + qid);
+
+    if (choicesEl) {
+      const items = [...choicesEl.children];
+      const isMtf = items.length > 0 && items[0].classList.contains('mtf-row');
+      if (isMtf) {
+        const user = [];
+        const corr = [];
+        items.forEach((rowEl, i) => {
+          const label = pickText(rowEl, '.mtf-label');
+          const tb = document.getElementById('mtf-' + qid + '-' + i + '-t');
+          const fbBtn = document.getElementById('mtf-' + qid + '-' + i + '-f');
+          const userVal = tb && tb.dataset.selected === 'true' ? 'True' : fbBtn && fbBtn.dataset.selected === 'false' ? 'False' : 'No answer';
+          const corVal = rowEl.dataset.tfcorrect === 'true' ? 'True' : 'False';
+          user.push(label + ': ' + userVal);
+          corr.push(label + ': ' + corVal);
+        });
+        row('Your Answers', user, 'wrong');
+        row('Correct Answers', corr, 'correct');
+      } else {
+        const user = [];
+        const corr = [];
+        items.forEach(item => {
+          const txt = pickText(item, '.choice-label');
+          if (item.dataset.userSelected === '1') user.push(txt);
+          if (item.dataset.correct === 'true') corr.push(txt);
+        });
+        row('Your Answers', user, user.length ? 'wrong' : '');
+        row('Correct Answers', corr, 'correct');
+      }
+    } else if (orderEl) {
+      const curItems = [...orderEl.querySelectorAll('.ordering-item')];
+      const user = curItems.map(el => pickText(el, '.ordering-item-label'));
+      const corr = [...curItems]
+        .sort((a, b) => parseInt(a.dataset.correctOrder, 10) - parseInt(b.dataset.correctOrder, 10))
+        .map(el => pickText(el, '.ordering-item-label'));
+      row('Your Order', user, 'wrong');
+      row('Correct Order', corr, 'correct');
+    } else if (answerEl) {
+      const user = answerEl.value.trim();
+      const expected = answerEl.dataset.expected ? answerEl.dataset.expected.trim() : '';
+      row('Your Answer', user ? [user] : ['(blank)'], 'wrong');
+      row('Correct Answer', expected ? [expected] : ['(any non-empty answer accepted)'], 'correct');
+    }
+
+    fb.appendChild(summary);
+  }
+
   // ── Evaluate ──────────────────────────────────────────────────────
   function evaluate(qid) {
     const card = document.getElementById('page-' + qid);
@@ -1160,6 +1357,8 @@
       const isCheckbox = items.length > 0 && items[0].querySelector('.checkbox');
       const isMtf = items.length > 0 && items[0].classList.contains('mtf-row');
 
+      clearChoiceStateBadges(qid);
+
       if (isMtf) {
         items.forEach((row, i) => {
           row.classList.add('disabled');
@@ -1168,21 +1367,59 @@
           const exp = row.dataset.tfcorrect;
           const userT = tb && tb.dataset.selected === 'true';
           const userF = fb && fb.dataset.selected === 'false';
-          if (exp === 'true')  { tb.classList.add(userT  ? 'correct-reveal' : 'wrong-reveal'); }
-          else                  { fb.classList.add(userF  ? 'correct-reveal' : 'wrong-reveal'); }
+
+          if (tb) tb.classList.remove('correct-reveal', 'wrong-reveal', 'user-picked');
+          if (fb) fb.classList.remove('correct-reveal', 'wrong-reveal', 'user-picked');
+
+          if (userT && tb) tb.classList.add('user-picked');
+          if (userF && fb) fb.classList.add('user-picked');
+
+          if (exp === 'true') {
+            if (tb) tb.classList.add('correct-reveal');
+            if (userF && fb) fb.classList.add('wrong-reveal');
+          } else {
+            if (fb) fb.classList.add('correct-reveal');
+            if (userT && tb) tb.classList.add('wrong-reveal');
+          }
+
+          const userVal = userT ? 'True' : userF ? 'False' : 'No answer';
+          const corVal = exp === 'true' ? 'True' : 'False';
+          if (userVal === corVal) {
+            addMTFState(row, 'You answered <span class="good">' + userVal + '</span>. Correct answer is <span class="good">' + corVal + '</span>.');
+          } else {
+            addMTFState(row, 'You answered <span class="bad">' + userVal + '</span>. Correct answer is <span class="good">' + corVal + '</span>.');
+          }
         });
       } else {
         items.forEach(el => {
           el.classList.add('disabled');
-          if (el.dataset.correct === 'true')   el.classList.add('correct-reveal');
-          else if (el.dataset.userSelected === '1') el.classList.add('wrong-reveal');
+          const selected = el.dataset.userSelected === '1';
+          const correct = el.dataset.correct === 'true';
+
+          el.classList.remove('user-picked', 'missed-correct');
+          if (selected) el.classList.add('user-picked');
+
+          if (correct && selected) {
+            el.classList.add('correct-reveal');
+            addStateBadge(el, 'Your Answer + Correct', 'correct');
+          } else if (correct) {
+            el.classList.add('correct-reveal', 'missed-correct');
+            addStateBadge(el, 'Correct Answer', 'correct');
+          } else if (selected) {
+            el.classList.add('wrong-reveal');
+            addStateBadge(el, 'Your Answer', 'wrong');
+          }
         });
       }
     }
     if (orderEl) {
+      clearChoiceStateBadges(qid);
       [...orderEl.querySelectorAll('.ordering-item')].forEach((el, i) => {
         el.classList.add('disabled');
-        el.classList.add(parseInt(el.dataset.correctOrder, 10) === i + 1 ? 'correct-reveal' : 'wrong-reveal');
+        const expected = parseInt(el.dataset.correctOrder, 10);
+        const ok = expected === i + 1;
+        el.classList.add(ok ? 'correct-reveal' : 'wrong-reveal');
+        addOrderingState(el, ok ? 'Correct Position' : ('Should be #' + expected), ok ? 'correct' : 'wrong');
       });
     }
     if (answerEl) answerEl.disabled = true;
@@ -1194,6 +1431,8 @@
       fb.classList.add('visible', isCorrect ? 'correct' : 'wrong');
       ft.textContent = isCorrect ? '✅ Correct!' : '❌ Incorrect';
     }
+
+    renderAnswerSummary(qid);
 
     updateSidebarItem(qid);
     updateTopbar();
