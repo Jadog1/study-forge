@@ -70,7 +70,7 @@ func Run(qf *parser.QuizFile, sfqPath string, openBrowser bool) error {
 	srv.Handler = mux
 
 	// Graceful shutdown helper — idempotent.
-	shutdown := func(score session.Score) {
+	shutdown := func() {
 		mu.Lock()
 		if finished {
 			mu.Unlock()
@@ -79,7 +79,7 @@ func Run(qf *parser.QuizFile, sfqPath string, openBrowser bool) error {
 		finished = true
 		mu.Unlock()
 
-		if err := session.Finish(sessDir, score); err != nil {
+		if err := session.Finish(sessDir); err != nil {
 			fmt.Fprintf(os.Stderr, "warning: could not finalise session: %v\n", err)
 		}
 		fmt.Printf("\nSession saved: %s\n", sess.SessionID)
@@ -102,12 +102,13 @@ func Run(qf *parser.QuizFile, sfqPath string, openBrowser bool) error {
 			return
 		}
 		var payload struct {
-			QuestionID    string `json:"question_id"`
-			QuestionTitle string `json:"question_title"`
+			QuestionID    string   `json:"question_id"`
+			QuestionTitle string   `json:"question_title"`
 			Tags          []string `json:"tags"`
-			Type          string `json:"type"`
-			Correct       bool   `json:"correct"`
-			TimeSpentSecs int    `json:"time_spent_s"`
+			Type          string   `json:"type"`
+			Correct       bool     `json:"correct"`
+			PartialCredit float64  `json:"partial_credit"`
+			TimeSpentSecs int      `json:"time_spent_s"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			http.Error(w, "bad request", http.StatusBadRequest)
@@ -120,6 +121,7 @@ func Run(qf *parser.QuizFile, sfqPath string, openBrowser bool) error {
 			Tags:          payload.Tags,
 			Type:          payload.Type,
 			Correct:       payload.Correct,
+			PartialCredit: payload.PartialCredit,
 			SubmittedAt:   time.Now().UTC(),
 			TimeSpentSecs: payload.TimeSpentSecs,
 		}
@@ -140,12 +142,8 @@ func Run(qf *parser.QuizFile, sfqPath string, openBrowser bool) error {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		var score session.Score
-		_ = json.NewDecoder(r.Body).Decode(&score)
-		// Skipped = total - answered
-		score.Skipped = qf.TotalCount() - score.Correct - score.Incorrect
 		w.WriteHeader(http.StatusNoContent)
-		go shutdown(score)
+		go shutdown()
 	})
 
 	// POST /heartbeat — browser pings this every 5 s while the tab is open
@@ -171,10 +169,7 @@ func Run(qf *parser.QuizFile, sfqPath string, openBrowser bool) error {
 			}
 			if elapsed > heartbeatTimeout {
 				log.Printf("sfq: no heartbeat for %v — treating as window close\n", elapsed.Round(time.Second))
-				// Build a partial score from recorded answers.
-				answers, _ := session.LoadAnswers(sessDir)
-				score := scoreFromAnswers(answers, qf.TotalCount())
-				shutdown(score)
+				shutdown()
 				return
 			}
 		}
@@ -192,28 +187,6 @@ func Run(qf *parser.QuizFile, sfqPath string, openBrowser bool) error {
 		return fmt.Errorf("server error: %w", err)
 	}
 	return nil
-}
-
-// scoreFromAnswers builds a Score from the JSONL answer log, computing skipped
-// as totalQuestions − answered so a partial session is recorded faithfully.
-func scoreFromAnswers(answers []session.Answer, total int) session.Score {
-	var s session.Score
-	for _, a := range answers {
-		if a.Correct {
-			s.Correct++
-		} else {
-			s.Incorrect++
-		}
-	}
-	s.Skipped = total - s.Correct - s.Incorrect
-	if s.Skipped < 0 {
-		s.Skipped = 0
-	}
-	answered := s.Correct + s.Incorrect
-	if answered > 0 {
-		s.Pct = (s.Correct * 100) / answered
-	}
-	return s
 }
 
 // openURL opens the given URL in the OS default browser.

@@ -20,6 +20,8 @@
       --accent-2:    #5de4c7;
       --correct:     #22d97a;
       --correct-bg:  rgba(34,217,122,0.1);
+      --partial:     #ffcc44;
+      --partial-bg:  rgba(255,204,68,0.1);
       --wrong:       #f05d7c;
       --wrong-bg:    rgba(240,93,124,0.1);
       --text:        #e8eaf6;
@@ -232,6 +234,7 @@
       color: var(--text);
     }
     .nav-item.correct { color: var(--correct); }
+    .nav-item.partial { color: var(--partial); }
     .nav-item.wrong   { color: var(--wrong); }
     .nav-num {
       flex-shrink: 0;
@@ -254,6 +257,7 @@
       white-space: nowrap;
     }
     .nav-item.correct .nav-badge { background: var(--correct-bg); border-color: var(--correct); color: var(--correct); }
+    .nav-item.partial .nav-badge { background: var(--partial-bg); border-color: var(--partial); color: var(--partial); }
     .nav-item.wrong   .nav-badge { background: var(--wrong-bg);   border-color: var(--wrong);   color: var(--wrong);   }
 
     /* ── Main stage ──────────────────────────────────────────────────── */
@@ -550,6 +554,7 @@
     }
     .feedback.visible { display: block; }
     .feedback.correct { background: var(--correct-bg); border: 1px solid var(--correct); color: var(--correct); }
+    .feedback.partial { background: var(--partial-bg); border: 1px solid var(--partial); color: var(--partial); }
     .feedback.wrong   { background: var(--wrong-bg);   border: 1px solid var(--wrong);   color: var(--wrong);   }
     .feedback-title { font-weight: 700; margin-bottom: 0.3rem; }
     .feedback-explain { color: var(--text); margin-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.45rem; font-size: 0.82rem; }
@@ -692,6 +697,7 @@
     .stat { text-align: center; }
     .stat-val { font-size: 1.6rem; font-weight: 700; }
     .stat-val.c  { color: var(--correct); }
+    .stat-val.p  { color: var(--partial); }
     .stat-val.w  { color: var(--wrong); }
     .stat-val.sk { color: var(--text-muted); }
     .stat-lbl { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.15rem; }
@@ -740,7 +746,7 @@
     </div>
     <div class="topbar-end">
       <div class="mode-pill {{ if .ServerMode }}tracked{{ else }}static{{ end }}">{{ if .ServerMode }}Tracked Mode{{ else }}Static Mode{{ end }}</div>
-      <div class="score-pill">✓ <span class="val" id="score-correct">0</span> &nbsp;✗ <span class="val" id="score-wrong">0</span></div>
+      <div class="score-pill">✓ <span class="val" id="score-correct">0</span> &nbsp;⚡ <span class="val" id="score-partial">0</span> &nbsp;✗ <span class="val" id="score-wrong">0</span></div>
     </div>
   </header>
 
@@ -937,6 +943,7 @@
         </div>
         <div class="summary-stats">
           <div class="stat"><div class="stat-val c" id="sum-correct">0</div><div class="stat-lbl">Correct</div></div>
+          <div class="stat"><div class="stat-val p" id="sum-partial">0</div><div class="stat-lbl">Partial</div></div>
           <div class="stat"><div class="stat-val w" id="sum-wrong">0</div><div class="stat-lbl">Incorrect</div></div>
           <div class="stat"><div class="stat-val sk" id="sum-skip">{{ .TotalCount }}</div><div class="stat-lbl">Remaining</div></div>
         </div>
@@ -967,7 +974,7 @@
   let current = 0;  // 0-based index into ids, TOTAL = summary
   const st = {};
   const qStartTimes = {}; // question open time for time_spent_s calculation
-  ids.forEach(id => { st[id] = { answered: false, correct: false }; });
+  ids.forEach(id => { st[id] = { answered: false, correct: false, partial: 0.0 }; });
 
   // ── Navigation ────────────────────────────────────────────────────
   function goTo(idx) {
@@ -1016,12 +1023,18 @@
     const curEl = document.getElementById('cur-q');
     if (curEl) curEl.textContent = current < TOTAL ? current + 1 : '—';
 
-    let answered = 0, correct = 0, wrong = 0;
+    let answered = 0, correct = 0, partialCount = 0, wrong = 0;
     ids.forEach(id => {
-      if (st[id].answered) { answered++; st[id].correct ? correct++ : wrong++; }
+      if (st[id].answered) {
+        answered++;
+        if (st[id].correct)         correct++;
+        else if (st[id].partial > 0) partialCount++;
+        else                         wrong++;
+      }
     });
-    document.getElementById('score-correct').textContent = correct;
-    document.getElementById('score-wrong').textContent   = wrong;
+    document.getElementById('score-correct').textContent  = correct;
+    document.getElementById('score-partial').textContent  = partialCount;
+    document.getElementById('score-wrong').textContent    = wrong;
     document.getElementById('progress-fill').style.width = (answered / TOTAL * 100) + '%';
   }
 
@@ -1039,23 +1052,38 @@
     const el = document.getElementById('nav-' + id);
     const badge = document.getElementById('nav-badge-' + id);
     if (!el) return;
-    el.classList.remove('correct', 'wrong');
+    el.classList.remove('correct', 'partial', 'wrong');
     if (st[id].answered) {
-      el.classList.add(st[id].correct ? 'correct' : 'wrong');
-      if (badge) badge.textContent = st[id].correct ? '✓' : '✗';
+      if (st[id].correct) {
+        el.classList.add('correct');
+        if (badge) badge.textContent = '✓';
+      } else if (st[id].partial > 0) {
+        el.classList.add('partial');
+        if (badge) badge.textContent = '⚡';
+      } else {
+        el.classList.add('wrong');
+        if (badge) badge.textContent = '✗';
+      }
     }
   }
 
   function updateSummary() {
-    let answered = 0, correct = 0, wrong = 0;
+    let answered = 0, correct = 0, partialCount = 0, wrong = 0, weightedPoints = 0;
     ids.forEach(id => {
-      if (st[id].answered) { answered++; st[id].correct ? correct++ : wrong++; }
+      if (st[id].answered) {
+        answered++;
+        weightedPoints += st[id].partial;
+        if (st[id].correct)         correct++;
+        else if (st[id].partial > 0) partialCount++;
+        else                         wrong++;
+      }
     });
-    document.getElementById('sum-correct').textContent = correct;
-    document.getElementById('sum-wrong').textContent   = wrong;
-    document.getElementById('sum-skip').textContent    = TOTAL - answered;
+    document.getElementById('sum-correct').textContent  = correct;
+    document.getElementById('sum-partial').textContent  = partialCount;
+    document.getElementById('sum-wrong').textContent    = wrong;
+    document.getElementById('sum-skip').textContent     = TOTAL - answered;
     if (answered === TOTAL) {
-      const pct = Math.round(correct / TOTAL * 100);
+      const pct = Math.round(weightedPoints / TOTAL * 100);
       document.getElementById('sum-pct').textContent = pct + '%';
       const label = pct >= 90 ? '🏆 Excellent!' : pct >= 70 ? '👍 Good job!' : pct >= 50 ? '📖 Keep studying!' : '💪 You\'ve got this!';
       document.getElementById('sum-label').textContent = label;
@@ -1282,40 +1310,46 @@
           if (exp === 'false' && !userF) allOk = false;
         });
         if (!anySelected) return null;
-        return { isCorrect: allOk };
+        return { isCorrect: allOk, partial: allOk ? 1.0 : 0.0 };
       }
 
       if (isCheckbox) {
-        // multi-select
+        // multi-select: partial credit = fraction of choices correctly classified
         let anySelected = false, allOk = true;
+        let rightCount = 0;
+        const totalChoices = items.length;
         items.forEach(el => {
           const sel = el.dataset.userSelected === '1';
           const cor = el.dataset.correct === 'true';
           if (sel) anySelected = true;
           if (sel !== cor) allOk = false;
+          if (sel === cor) rightCount++;
         });
         if (!anySelected) return null;
-        return { isCorrect: allOk };
+        const partial = allOk ? 1.0 : rightCount / totalChoices;
+        return { isCorrect: allOk, partial };
       }
 
       // radio (multiple-choice / true-false)
       let chosen = null;
       items.forEach(el => { if (el.dataset.userSelected === '1') chosen = el; });
       if (!chosen) return null;
-      return { isCorrect: chosen.dataset.correct === 'true' };
+      const radioOk = chosen.dataset.correct === 'true';
+      return { isCorrect: radioOk, partial: radioOk ? 1.0 : 0.0 };
     }
 
     if (orderEl) {
       const items = [...orderEl.querySelectorAll('.ordering-item')];
       const ok = items.every((el, i) => parseInt(el.dataset.correctOrder, 10) === i + 1);
-      return { isCorrect: ok };
+      return { isCorrect: ok, partial: ok ? 1.0 : 0.0 };
     }
 
     if (answerEl) {
       const val = answerEl.value.trim();
       if (!val) return null;
       const exp = answerEl.dataset.expected ? answerEl.dataset.expected.trim().toLowerCase() : null;
-      return { isCorrect: exp === null || val.toLowerCase() === exp };
+      const saOk = exp === null || val.toLowerCase() === exp;
+      return { isCorrect: saOk, partial: saOk ? 1.0 : 0.0 };
     }
 
     return null;
@@ -1340,8 +1374,8 @@
       return;
     }
 
-    const { isCorrect } = result;
-    st[qid] = { answered: true, correct: isCorrect };
+    const { isCorrect, partial } = result;
+    st[qid] = { answered: true, correct: isCorrect, partial };
 
     // Disable submit / change label
     const submitBtn = document.getElementById('submit-' + qid);
@@ -1428,8 +1462,9 @@
     const fb = document.getElementById('feedback-' + qid);
     const ft = document.getElementById('feedback-title-' + qid);
     if (fb && ft) {
-      fb.classList.add('visible', isCorrect ? 'correct' : 'wrong');
-      ft.textContent = isCorrect ? '✅ Correct!' : '❌ Incorrect';
+      const isPartial = !isCorrect && partial > 0;
+      fb.classList.add('visible', isCorrect ? 'correct' : isPartial ? 'partial' : 'wrong');
+      ft.textContent = isCorrect ? '✅ Correct!' : isPartial ? '⚡ Partial Credit' : '❌ Incorrect';
     }
 
     renderAnswerSummary(qid);
@@ -1451,6 +1486,7 @@
           tags:           meta.tags  || [],
           type:           meta.type  || '',
           correct:        isCorrect,
+          partial_credit: partial,
           time_spent_s:   elapsed,
         }),
       }).catch(() => {}); // non-fatal
@@ -1477,15 +1513,19 @@
     setInterval(() => { fetch('/heartbeat', { method: 'POST' }).catch(() => {}); }, 5000);
 
     const finishSession = () => {
-      let correct = 0, incorrect = 0;
+      let correct = 0, partialCount = 0, incorrect = 0;
       ids.forEach(id => {
-        if (st[id].answered) { st[id].correct ? correct++ : incorrect++; }
+        if (st[id].answered) {
+          if (st[id].correct)          correct++;
+          else if (st[id].partial > 0) partialCount++;
+          else                         incorrect++;
+        }
       });
-      const skipped = TOTAL - correct - incorrect;
+      const skipped = TOTAL - correct - partialCount - incorrect;
       fetch('/finish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ correct, incorrect, skipped }),
+        body: JSON.stringify({ correct, partial: partialCount, incorrect, skipped }),
       }).catch(() => {}).finally(() => window.close());
     };
 

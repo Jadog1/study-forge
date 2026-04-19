@@ -1,13 +1,15 @@
 // Package session manages persistent quiz session state for sfq.
 // Sessions are stored as flat files under ~/.sfq/sessions/<session-id>/:
-//   meta.json    — session metadata (title, score, timestamps)
-//   answers.jsonl — one JSON line per submitted answer (append-only)
+//
+//	meta.json    — session metadata (title, score, timestamps)
+//	answers.jsonl — one JSON line per submitted answer (append-only)
 package session
 
 import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -24,9 +26,10 @@ import (
 // Score holds the final quiz result breakdown.
 type Score struct {
 	Correct   int `json:"correct"`
+	Partial   int `json:"partial"` // count of partially-correct answers (0 < credit < 1)
 	Incorrect int `json:"incorrect"`
 	Skipped   int `json:"skipped"`
-	Pct       int `json:"pct"` // rounded integer percentage
+	Pct       int `json:"pct"` // weighted integer percentage (partial credits count fractionally)
 }
 
 // Session represents the metadata for a single quiz session.
@@ -48,6 +51,7 @@ type Answer struct {
 	Tags          []string  `json:"tags"`
 	Type          string    `json:"type"`
 	Correct       bool      `json:"correct"`
+	PartialCredit float64   `json:"partial_credit,omitempty"` // 0.0–1.0; present on question types that support partial scoring
 	SubmittedAt   time.Time `json:"submitted_at"`
 	TimeSpentSecs int       `json:"time_spent_s"`
 }
@@ -186,18 +190,53 @@ func AppendAnswer(dir string, a Answer) error {
 
 // ── Session Finalisation ──────────────────────────────────────────────────────
 
+// ComputeScore derives a Score from stored Answer records.
+// Partial credit (0 < PartialCredit < 1) is weighted in the Pct calculation.
+func ComputeScore(answers []Answer, total int) Score {
+	var (
+		correct        int
+		partial        int
+		incorrect      int
+		weightedPoints float64
+	)
+	for _, a := range answers {
+		if a.Correct {
+			correct++
+			weightedPoints += 1.0
+		} else if a.PartialCredit > 0 {
+			partial++
+			weightedPoints += a.PartialCredit
+		} else {
+			incorrect++
+		}
+	}
+	skipped := total - correct - partial - incorrect
+	if skipped < 0 {
+		skipped = 0
+	}
+	pct := 0
+	if total > 0 {
+		pct = int(math.Round(weightedPoints / float64(total) * 100))
+	}
+	return Score{
+		Correct:   correct,
+		Partial:   partial,
+		Incorrect: incorrect,
+		Skipped:   skipped,
+		Pct:       pct,
+	}
+}
+
 // Finish updates meta.json with the final score and ended_at timestamp.
-// It is safe to call multiple times (e.g. both on explicit finish and heartbeat timeout).
-func Finish(dir string, score Score) error {
+// The score is derived from the stored answers.jsonl, so the caller does not
+// need to supply it. It is safe to call multiple times (idempotent).
+func Finish(dir string) error {
 	s, err := LoadMeta(dir)
 	if err != nil {
 		return err
 	}
-	// Compute percentage
-	answered := score.Correct + score.Incorrect
-	if answered > 0 {
-		score.Pct = (score.Correct * 100) / answered
-	}
+	answers, _ := LoadAnswers(dir)
+	score := ComputeScore(answers, s.TotalQuestions)
 	now := time.Now().UTC()
 	s.EndedAt = &now
 	s.Score = &score

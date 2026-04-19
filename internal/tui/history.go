@@ -18,6 +18,7 @@ import (
 var (
 	accentColor  = lipgloss.Color("#7c6af0")
 	correctColor = lipgloss.Color("#22d97a")
+	partialColor = lipgloss.Color("#ffcc44")
 	wrongColor   = lipgloss.Color("#f05d7c")
 	mutedColor   = lipgloss.Color("#8991b4")
 	dimColor     = lipgloss.Color("#5a6080")
@@ -25,6 +26,7 @@ var (
 
 	titleStyle   = lipgloss.NewStyle().Bold(true).Foreground(accentColor)
 	correctStyle = lipgloss.NewStyle().Foreground(correctColor)
+	partialStyle = lipgloss.NewStyle().Foreground(partialColor)
 	wrongStyle   = lipgloss.NewStyle().Foreground(wrongColor)
 	mutedStyle   = lipgloss.NewStyle().Foreground(mutedColor)
 	dimStyle     = lipgloss.NewStyle().Foreground(dimColor)
@@ -307,6 +309,7 @@ func buildDetailLines(s session.Session, answers []session.Answer) []string {
 
 	if s.Score != nil {
 		c := correctStyle.Render(fmt.Sprintf("✓ %d correct", s.Score.Correct))
+		p := partialStyle.Render(fmt.Sprintf("⚡ %d partial", s.Score.Partial))
 		w := wrongStyle.Render(fmt.Sprintf("✗ %d incorrect", s.Score.Incorrect))
 		sk := dimStyle.Render(fmt.Sprintf("– %d skipped", s.Score.Skipped))
 		pctCol := correctStyle
@@ -315,7 +318,12 @@ func buildDetailLines(s session.Session, answers []session.Answer) []string {
 		} else if s.Score.Pct < 70 {
 			pctCol = mutedStyle
 		}
-		lines = append(lines, "Score    "+pctCol.Render(fmt.Sprintf("%d%%", s.Score.Pct))+"   "+c+"   "+w+"   "+sk)
+		scoreLine := "Score    " + pctCol.Render(fmt.Sprintf("%d%%", s.Score.Pct)) + "   " + c + "   "
+		if s.Score.Partial > 0 {
+			scoreLine += p + "   "
+		}
+		scoreLine += w + "   " + sk
+		lines = append(lines, scoreLine)
 	} else {
 		lines = append(lines, mutedStyle.Render("Score    in progress"))
 	}
@@ -333,7 +341,11 @@ func buildDetailLines(s session.Session, answers []session.Answer) []string {
 		for i, a := range answers {
 			mark := correctStyle.Render("✅")
 			if !a.Correct {
-				mark = wrongStyle.Render("❌")
+				if a.PartialCredit > 0 {
+					mark = partialStyle.Render(fmt.Sprintf("⚡%.0f%%", a.PartialCredit*100))
+				} else {
+					mark = wrongStyle.Render("❌")
+				}
 			}
 			title := truncRunes(a.QuestionTitle, 42)
 			tags := ""

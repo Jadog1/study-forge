@@ -411,8 +411,8 @@ func resultsCmd() *cobra.Command {
 				fmt.Printf("   Ended    : %s\n", meta.EndedAt.Local().Format("2006-01-02 15:04:05"))
 			}
 			if meta.Score != nil {
-				fmt.Printf("   Score    : %d%% — %d correct, %d incorrect, %d skipped\n",
-					meta.Score.Pct, meta.Score.Correct, meta.Score.Incorrect, meta.Score.Skipped)
+				fmt.Printf("   Score    : %d%% — %d correct, %d partial, %d incorrect, %d skipped\n",
+					meta.Score.Pct, meta.Score.Correct, meta.Score.Partial, meta.Score.Incorrect, meta.Score.Skipped)
 			}
 			if len(meta.Tags) > 0 {
 				fmt.Printf("   Tags     : %s\n", strings.Join(meta.Tags, ", "))
@@ -430,7 +430,11 @@ func resultsCmd() *cobra.Command {
 			for i, a := range answers {
 				result := "✅"
 				if !a.Correct {
-					result = "❌"
+					if a.PartialCredit > 0 {
+						result = fmt.Sprintf("⚡%.0f%%", a.PartialCredit*100)
+					} else {
+						result = "❌"
+					}
 				}
 				tagsStr := strings.Join(a.Tags, ", ")
 				if tagsStr == "" {
